@@ -1,0 +1,35 @@
+# FC Master Terminal Suite - Developer Context
+**Current Version:** 10.6
+**Environment:** Tampermonkey script running on `admin.faithfulcompanion.com/job*`
+**Purpose:** A unified overlay bypassing the standard UI to offer Rapid Check-In, Communal Logging, and X-Ray Vision. 
+
+## 1. Architectural Rules (Strictly Enforced)
+The script uses a decoupled, modular namespace architecture. DO NOT write flat, monolithic code.
+* `CONFIG`: Stores local storage keys, endpoints, and default settings.
+* `State`: Single source of truth. Handles `rapidLog`, `commLog`, `settings`, `activePallet`. UI modules read/write here.
+* `Utils`: Pure helpers (HTML stripping, date formatting, clipboard generation).
+* `AudioService`: Web Audio API synthesizer.
+* `API`: All fetch requests. Never put `fetch()` calls inside UI logic.
+* `UI`: CSS injection and initial DOM HTML payload.
+* `App`: Main controller with submodules `App.Rapid`, `App.Comm`, and `App.XRay`.
+
+## 2. Faithful Companion API Quirks (CRITICAL)
+The `/job/list` endpoint uses a fragile DataTables backend. You must adhere to these rules:
+* **The 14-Column Rule:** The POST payload MUST explicitly define `columns[0]` through `columns[13]` (data, name, searchable, orderable, search[value], search[regex]). Omitting columns causes the server to shift/scramble the returned array indexes.
+* **Sequential Fetching:** The server has aggressive rate-limiting. DO NOT use `Promise.all()` to search Open and Closed jobs concurrently. You must `await` the first fetch before firing the second. 
+* **Date Filters:** The payload requires `job_filter_period` (e.g., `01/01/2026 - 03/01/2026`). Do NOT manually URL-encode this string (no `%2F` or `+-+`); `URLSearchParams` handles it natively. If you double-encode, the server returns 0 results.
+* **Data Mapping:** The clean data returned maps exactly as follows:
+   * `row[0]`: Request ID (strip HTML)
+   * `row[3]`: Cremation ID (strip HTML)
+   * `row[5]`: Service Type (e.g., Private, Communal)
+   * `row[6]`: Clinic (Must scrape `data-content="..."` regex to get the un-truncated name)
+   * `row[7]`: Family Name
+   * `row[8]`: Pet Name
+
+## 3. Resolved Anti-Patterns & Bugs (Do Not Repeat)
+* **X-Ray Tooltip Null Error:** The `App.XRay.init()` function MUST dynamically create `<div id="fc-xray-tooltip"></div>` and append it to the `document.body` if it doesn't exist. Do not rely on the main UI injector for this, or it will throw null reference errors on mouseover.
+* **Scope Loss on DOM Events:** Ensure `activePallet` is stored in the global `State` object, not as a local variable inside the Comm module, to prevent `ReferenceError` on button clicks.
+* **Print Styling:** When exporting the HTML table for printing via `window.open()`, inline styles for alternating row colors (`background-color:#ededed` / `#ffffff`) must be calculated and injected directly into the `<tr>` tags during generation, otherwise the printed page will be transparent.
+
+## 4. Current Task
+[INSERT YOUR NEW FEATURE REQUEST OR BUG REPORT HERE]
