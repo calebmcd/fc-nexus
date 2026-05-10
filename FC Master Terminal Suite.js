@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.6
+// @version      13.5
 // @description  Unified terminal. Multi-User profiles, dynamic storage, native print, custom shortcuts. Export fixed.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -805,40 +805,34 @@
                 if (!State.rapidLog.length) return alert('Log empty!');
                 const logLen = State.rapidLog.length;
                 let plainText = "Batch\tPet Name\tFamily Name\tClinic\tKeepsakes\tInitials\n";
-                
-                let tableHtml = `<table cellspacing="0" border="0" cellpadding="0" style="margin-left:0pt;mso-padding-alt:0pt 5.4pt 0pt 5.4pt;border-left:1.5pt solid #000;border-top:1.5pt solid #000;border-right:1.5pt solid #000;border-bottom:1.5pt solid #000;mso-border-insidev:none;mso-border-insideh:none;">`;
-                tableHtml += `<tr style="height:12.25pt;">`;
-                tableHtml += `<td width="48" style="width:36.28pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Batch</b></span></p></td>`;
-                tableHtml += `<td width="114" style="width:85.54pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Pet Name</b></span></p></td>`;
-                tableHtml += `<td width="86" style="width:64.87pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Family Name</b></span></p></td>`;
-                tableHtml += `<td width="89" style="width:66.99pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Clinic</b></span></p></td>`;
-                tableHtml += `<td width="81" style="width:60.80pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Keepsakes</b></span></p></td>`;
-                tableHtml += `<td width="56" style="width:41.76pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Initials</b></span></p></td>`;
-                tableHtml += `</tr>`;
-                
+                let tableHtml = `<div><h3 style="font-family:-apple-system,sans-serif;">Communal Check-In Log</h3><table cellspacing="0" border="0" cellpadding="0" style="border-collapse:collapse;border:1.5pt solid black;font-family:'Lexend',sans-serif;font-size:10pt;width:100%;"><tr style="height:19.2pt;background-color:#bfbfbf;"><td style="border:1.5pt solid black;padding:4pt;text-align:center;width:8%;"><b>Batch</b></td><td style="border:1.5pt solid black;padding:4pt;width:24%;"><b>Pet Name</b></td><td style="border:1.5pt solid black;padding:4pt;width:24%;"><b>Family Name</b></td><td style="border:1.5pt solid black;padding:4pt;width:24%;"><b>Clinic</b></td><td style="border:1.5pt solid black;padding:4pt;text-align:center;width:12%;"><b>Keepsakes</b></td><td style="border:1.5pt solid black;padding:4pt;text-align:center;width:8%;"><b>Initials</b></td></tr>`;
+
                 for (let i = 0; i < logLen; i++) {
                     const r = State.rapidLog[i];
                     let rB = i + 1, rP = r.pet||'', rF = r.family||'', rC = r.clinic||'', rK = r.keepsakes||'', rI = r.initials||'';
                     plainText += `${rB}\t${rP}\t${rF}\t${rC}\t${rK}\t${rI}\n`;
-                    let bg = (i % 2 === 0) ? '#ededed' : '#ffffff'; 
-                    let bBtm = (i === logLen - 1) ? '1.5pt' : '0.5pt';
-                    
-                    tableHtml += `<tr style="height:12.25pt;">`;
-                    tableHtml += `<td width="48" style="width:36.28pt;background-color:${bg};padding:4pt;border-left:1.5pt solid #000;border-top:0.5pt solid #000;border-right:0.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>${rB}</b></span></p></td>`;
-                    tableHtml += `<td width="114" style="width:85.54pt;background-color:${bg};padding:4pt;border:0.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;">${rP}</span></p></td>`;
-                    tableHtml += `<td width="86" style="width:64.87pt;background-color:${bg};padding:4pt;border:0.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;">${rF}</span></p></td>`;
-                    tableHtml += `<td width="89" style="width:66.99pt;background-color:${bg};padding:4pt;border:0.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;">${rC}</span></p></td>`;
-                    tableHtml += `<td width="81" style="width:60.80pt;background-color:${bg};padding:4pt;border:0.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>${rK}</b></span></p></td>`;
-                    tableHtml += `<td width="56" style="width:41.76pt;background-color:${bg};padding:4pt;border-left:0.5pt solid #000;border-top:0.5pt solid #000;border-right:1.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;">${rI}</span></p></td>`;
-                    tableHtml += `</tr>`;
+                    let bg = (i % 2 === 0) ? 'background-color:#ededed;' : 'background-color:#ffffff;'; let bBtm = (i === logLen - 1) ? '1.5pt' : '0.5pt';
+                    tableHtml += `<tr style="height:19.2pt; ${bg}"><td style="padding:4pt; border-left:1.5pt solid black; border-right:0.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black; text-align:center;"><b>${rB}</b></td><td style="padding:4pt; border-left:0.5pt solid black; border-right:0.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black;">${rP}</td><td style="padding:4pt; border-left:0.5pt solid black; border-right:0.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black;">${rF}</td><td style="padding:4pt; border-left:0.5pt solid black; border-right:0.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black;">${rC}</td><td style="padding:4pt; border-left:0.5pt solid black; border-right:0.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black; text-align:center;"><b>${rK}</b></td><td style="padding:4pt; border-left:0.5pt solid black; border-right:1.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black; text-align:center;">${rI}</td></tr>`;
                 }
-                tableHtml += `</table>`;
-                let wordHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body><div><h3 style="font-family:-apple-system,sans-serif;">Communal Check-In Log</h3>${tableHtml}</div></body></html>`;
+                tableHtml += `</table></div>`;
+                let wordHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>${tableHtml}</body></html>`;
 
                 if (isPrint) {
-                    const pw = window.open('', '_blank');
-                    pw.document.write(`<html><head><title>Communal Check-In Log</title><style>@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap');body{font-family:'Lexend',-apple-system,sans-serif;padding:20px;color:#000;box-sizing:border-box;}table{border-collapse:collapse;width:100%;}td{border:1px solid #000;padding:4px;}</style></head><body><h3 style="font-family:-apple-system,sans-serif;">Communal Check-In Log</h3>${tableHtml}</body></html>`);
-                    pw.document.close(); setTimeout(() => pw.focus(), 500);
+                    let tableRows = ''; State.rapidLog.forEach((row, index) => { let printBgStyle = (index % 2 === 0) ? 'background-color:#ededed;' : 'background-color:#ffffff;'; tableRows += `<tr style="${printBgStyle}"><td style="text-align:center;">${row.batch}</td><td>${row.pet}</td><td>${row.family}</td><td>${row.clinic}</td><td style="text-align:center; font-size:11px; font-weight:bold;">${row.keepsakes}</td><td style="text-align:center;">${row.initials}</td></tr>`; });
+                    let allPagesHtml = `<div class="page"><div class="header-sec"><span>Communal Check-In Log</span><span>Date: <span style="text-decoration:underline;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span></div><table><thead><tr><th style="width:8%;text-align:center;">Batch</th><th style="width:20%;">Pet Name</th><th style="width:20%;">Family Name</th><th style="width:32%;">Clinic</th><th style="width:12%;text-align:center;">Keepsakes</th><th style="width:8%;text-align:center;">Initials</th></tr></thead><tbody>${tableRows}</tbody></table></div>`;
+
+                    const printWindow = window.open('', '_blank');
+                    printWindow.document.write(`<html><head><title>Communal Check-In Log</title><style>
+                        @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap');
+                        body{font-family:'Lexend',-apple-system,sans-serif;padding:0;margin:0;color:#000;box-sizing:border-box;}
+                        .page{box-sizing:border-box;padding:0.4in;}
+                        .header-sec{display:flex;justify-content:space-between;font-size:18px;font-weight:bold;margin-bottom:12px;}
+                        table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;}
+                        th,td{border:1px solid #000;padding:4px 6px;text-align:left;height:23px;overflow:hidden;white-space:nowrap;}
+                        th{background-color:#f2f2f2;font-weight:bold;}
+                        @media print{body{padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}@page{size:letter portrait;margin:0;}}
+                    </style></head><body>${allPagesHtml}</body></html>`);
+                    printWindow.document.close(); setTimeout(() => printWindow.focus(), 500);
                 } else { Utils.copyToClipboard(wordHtml, plainText, 'rapid-copy-btn'); this.getEl('rapid-input').focus(); }
             }
         },
@@ -1039,8 +1033,8 @@
                 const buildRow = (lbl, S, M, L, T, W, bg, isL) => { let bb = isL?'1.5pt':'0.5pt'; return `<tr style="height:38.8pt;"><td style="width:56.15pt;background-color:${bg};padding:0pt 5.4pt;border-left:1.5pt solid #000;border-top:0.5pt solid #000;border-right:2.25pt solid #000;border-bottom:${bb} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>${lbl}</b></span></p></td><td style="width:60.25pt;background-color:${bg};padding:0pt 5.4pt;border-left:2.25pt solid #000;border-top:0.5pt solid #000;border-right:0.5pt solid #000;border-bottom:${bb} solid #000;"></td><td style="width:60.25pt;background-color:${bg};padding:0pt 5.4pt;border-left:0.5pt solid #000;border-top:0.5pt solid #000;border-right:2.25pt solid #000;border-bottom:${bb} solid #000;"></td><td style="width:72.7pt;background-color:${bg};padding:0pt 5.4pt;border-left:2.25pt solid #000;border-top:0.5pt solid #000;border-right:0.5pt solid #000;border-bottom:${bb} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;">${S}</span></p></td><td style="width:72.7pt;background-color:${bg};padding:0pt 5.4pt;border-left:0.5pt solid #000;border-top:0.5pt solid #000;border-right:0.5pt solid #000;border-bottom:${bb} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;">${M}</span></p></td><td style="width:72.7pt;background-color:${bg};padding:0pt 5.4pt;border-left:0.5pt solid #000;border-top:0.5pt solid #000;border-right:1.5pt solid #000;border-bottom:${bb} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;">${L}</span></p></td><td style="width:72.7pt;background-color:${bg};padding:0pt 5.4pt;border-left:1.5pt solid #000;border-top:0.5pt solid #000;border-right:2.25pt solid #000;border-bottom:${bb} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>${T}</b></span></p></td><td style="width:72.7pt;background-color:${bg};padding:0pt 5.4pt;border-left:2.25pt solid #000;border-top:0.5pt solid #000;border-right:1.5pt solid #000;border-bottom:${bb} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>${W}</b></span></p></td></tr>`; };
 
                 const isSeparate = State.settings.commExportFormat === 'separate'; let logHtml = ''; let tsvLog = "\nLOG\n"; const pCount = State.settings.commPalletCount || 2; let palletsToExport = isSeparate ? Array.from({length: pCount}, (_, i) => i + 1) : [0]; let isFirstTable = true;
-                
-                if (State.settings.commSummaryFormat === 'split') { 
+
+                if (State.settings.commSummaryFormat === 'split') {
                     for(let i=1; i<=pCount; i++) {
                         tsv += `Pallet ${i}\t\t\t${st[`p${i}`].s}\t${st[`p${i}`].m}\t${st[`p${i}`].l}\t${st[`p${i}`].t}\t${st[`p${i}`].w}\n`;
                         sumHtml += buildRow(`${i}`, st[`p${i}`].s, st[`p${i}`].m, st[`p${i}`].l, st[`p${i}`].t, st[`p${i}`].w, (i%2!==0?'#ededed':'#ffffff'), false);
@@ -1049,56 +1043,37 @@
                         sumHtml += buildRow('All', st.c.s, st.c.m, st.c.l, st.c.t, st.c.w, (pCount%2!==0?'#ffffff':'#ededed'), true);
                         tsv += `All\t\t\t${st.c.s}\t${st.c.m}\t${st.c.l}\t${st.c.t}\t${st.c.w}\n`;
                     } else { sumHtml = sumHtml.replace('border-bottom:0.5pt', 'border-bottom:1.5pt'); }
-                } else { 
+                } else {
                     let combinedLabel = Array.from({length: pCount}, (_, i) => i + 1).join(pCount>2?', ':' & ').replace(/, ([^,]*)$/, ' & $1');
-                    if (pCount === 1) combinedLabel = "1"; tsv += `${combinedLabel}\t\t\t${st.c.s}\t${st.c.m}\t${st.c.l}\t${st.c.t}\t${st.c.w}\n`; sumHtml += buildRow(combinedLabel, st.c.s, st.c.m, st.c.l, st.c.t, st.c.w, '#ededed', true); 
+                    if (pCount === 1) combinedLabel = "1"; tsv += `${combinedLabel}\t\t\t${st.c.s}\t${st.c.m}\t${st.c.l}\t${st.c.t}\t${st.c.w}\n`; sumHtml += buildRow(combinedLabel, st.c.s, st.c.m, st.c.l, st.c.t, st.c.w, '#ededed', true);
                 }
                 const sizeRank = (s) => { if(!s) return 99; let c = s.charAt(0).toUpperCase(); if(c==='S' || c==='E') return 1; if(c==='M') return 2; if(c==='L') return 3; return 4; };
 
                 palletsToExport.forEach(palletNum => {
                     let pLog = []; if (isSeparate) { pLog = [...State.commLog].filter(r => r.pallet === palletNum); if (pLog.length === 0) return; } else { pLog = [...State.commLog]; }
                     pLog.sort((a, b) => { if (!isSeparate && a.pallet !== b.pallet) return a.pallet - b.pallet; return sizeRank(a.size) - sizeRank(b.size); });
-                    
-                    let heading = isSeparate ? `Communal Cremation Log - Pallet ${palletNum}` : `Communal Cremation Log`; 
+
+                    let heading = isSeparate ? `Communal Cremation Log - Pallet ${palletNum}` : `Communal Cremation Log`;
                     if (isSeparate) tsvLog += `\n--- PALLET ${palletNum} ---\nBatch\tWeight\tPet Name\tFamily Name\tClinic\tKeepsakes\tInitials\n`; else tsvLog += `Batch\tWeight\tPet Name\tFamily Name\tClinic\tKeepsakes\tInitials\n`;
 
                     let pageBreakStyle = (!isFirstTable && isSeparate) ? 'page-break-before: always; break-before: page;' : ''; isFirstTable = false;
-                    
-                    let tableHtml = `<div style="${pageBreakStyle}"><h3 style="font-family:-apple-system,sans-serif;">${heading}</h3><table cellspacing="0" border="0" cellpadding="0" style="margin-left:0pt;mso-padding-alt:0pt 5.4pt 0pt 5.4pt;border-left:1.5pt solid #000;border-top:1.5pt solid #000;border-right:1.5pt solid #000;border-bottom:1.5pt solid #000;mso-border-insidev:none;mso-border-insideh:none;">`;
-                    tableHtml += `<tr style="height:12.25pt;">`;
-                    tableHtml += `<td width="56" style="width:42.00pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Batch</b></span></p></td>`;
-                    tableHtml += `<td width="71" style="width:53.05pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Weight</b></span></p></td>`;
-                    tableHtml += `<td width="141" style="width:106.05pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Pet Name</b></span></p></td>`;
-                    tableHtml += `<td width="100" style="width:74.70pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Family Name</b></span></p></td>`;
-                    tableHtml += `<td width="208" style="width:155.90pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Clinic</b></span></p></td>`;
-                    tableHtml += `<td width="85" style="width:63.80pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Keepsakes</b></span></p></td>`;
-                    tableHtml += `<td width="59" style="width:44.50pt;background-color:#bfbfbf;padding:4pt;border:1.5pt solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>Initials</b></span></p></td>`;
-                    tableHtml += `</tr>`;
-                    
+                    let tableHtml = `<div style="${pageBreakStyle}"><h3 style="font-family:-apple-system,sans-serif;">${heading}</h3><table cellspacing="0" border="0" cellpadding="0" style="border-collapse:collapse;border:1.5pt solid black;font-family:'Lexend',sans-serif;font-size:10pt;width:100%;"><tr style="height:19.2pt;background-color:#bfbfbf;"><td style="border:1.5pt solid black;padding:4pt;text-align:center;width:8%;"><b>Batch</b></td><td style="border:1.5pt solid black;padding:4pt;text-align:center;width:10%;"><b>Weight</b></td><td style="border:1.5pt solid black;padding:4pt;width:20%;"><b>Pet Name</b></td><td style="border:1.5pt solid black;padding:4pt;width:20%;"><b>Family Name</b></td><td style="border:1.5pt solid black;padding:4pt;width:22%;"><b>Clinic</b></td><td style="border:1.5pt solid black;padding:4pt;text-align:center;width:12%;"><b>Keepsakes</b></td><td style="border:1.5pt solid black;padding:4pt;text-align:center;width:8%;"><b>Initials</b></td></tr>`;
+
                     pLog.forEach((rowObj, index) => {
                         let rB = index+1, rW = '', rP = rowObj.pet||'', rF = rowObj.family||'', rC = rowObj.clinic||'', rK = rowObj.keepsakes||'', rI = rowObj.initials||'', pN = rowObj.pallet || palletNum;
                         rW = (State.settings.commWeightMode === 'numeric') ? (rowObj.weightNum?rowObj.weightNum:'') : (rowObj.size||'');
                         tsvLog += `${rB}\t${rW}\t${rP}\t${rF}\t${rC}\t${rK}\t${rI}\n`;
-                        
-                        let bg = (index%2===0) ? '#ededed' : '#ffffff';
-                        if(State.settings.commColorCode) { if (pN === 1) bg = '#ffe0b2'; else if (pN === 2) bg = '#cce0ff'; else if (pN === 3) bg = '#c8e6c9'; else if (pN === 4) bg = '#f8cce6'; }
+
+                        let bg = (index%2===0) ? 'background-color:#ededed;' : 'background-color:#ffffff;';
+                        if(State.settings.commColorCode) { if (pN === 1) bg = 'background-color:#ffe0b2;'; else if (pN === 2) bg = 'background-color:#cce0ff;'; else if (pN === 3) bg = 'background-color:#c8e6c9;'; else if (pN === 4) bg = 'background-color:#f8cce6;'; }
                         let bBtm = (index === pLog.length - 1) ? '1.5pt' : '0.5pt';
-                        
-                        tableHtml += `<tr style="height:12.25pt;">`;
-                        tableHtml += `<td width="56" style="width:42.00pt;background-color:${bg};padding:4pt;border-left:1.5pt solid #000;border-top:0.5pt solid #000;border-right:0.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>${rB}</b></span></p></td>`;
-                        tableHtml += `<td width="71" style="width:53.05pt;background-color:${bg};padding:4pt;border:0.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;">${rW}</span></p></td>`;
-                        tableHtml += `<td width="141" style="width:106.05pt;background-color:${bg};padding:4pt;border:0.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;">${rP}</span></p></td>`;
-                        tableHtml += `<td width="100" style="width:74.70pt;background-color:${bg};padding:4pt;border:0.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;">${rF}</span></p></td>`;
-                        tableHtml += `<td width="208" style="width:155.90pt;background-color:${bg};padding:4pt;border:0.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;">${rC}</span></p></td>`;
-                        tableHtml += `<td width="85" style="width:63.80pt;background-color:${bg};padding:4pt;border:0.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;"><b>${rK}</b></span></p></td>`;
-                        tableHtml += `<td width="59" style="width:44.50pt;background-color:${bg};padding:4pt;border-left:0.5pt solid #000;border-top:0.5pt solid #000;border-right:1.5pt solid #000;border-bottom:${bBtm} solid #000;"><p style="text-align:center;margin:0;"><span style="font-family:'Lexend';font-size:10pt;color:#000;">${rI}</span></p></td>`;
-                        tableHtml += `</tr>`;
+                        tableHtml += `<tr style="height:19.2pt; ${bg}"><td style="padding:4pt; border-left:1.5pt solid black; border-right:0.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black; text-align:center;"><b>${rB}</b></td><td style="padding:4pt; border-left:0.5pt solid black; border-right:0.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black; text-align:center;">${rW}</td><td style="padding:4pt; border-left:0.5pt solid black; border-right:0.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black;">${rP}</td><td style="padding:4pt; border-left:0.5pt solid black; border-right:0.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black;">${rF}</td><td style="padding:4pt; border-left:0.5pt solid black; border-right:0.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black;">${rC}</td><td style="padding:4pt; border-left:0.5pt solid black; border-right:0.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black; text-align:center;"><b>${rK}</b></td><td style="padding:4pt; border-left:0.5pt solid black; border-right:1.5pt solid black; border-top:0.5pt solid black; border-bottom:${bBtm} solid black; text-align:center;">${rI}</td></tr>`;
                     });
                     tableHtml += `</table></div>`; logHtml += tableHtml;
                 });
 
                 let wordHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body><h3 style="font-family:-apple-system,sans-serif;">Communal Totals</h3><table cellspacing="0" border="0" cellpadding="0" style="margin-left:0pt;border-collapse:collapse;border:1.5pt solid black;margin-bottom:20pt;width:100%;">${hHtml}${sumHtml}</table>${logHtml}</body></html>`;
-                
+
                 return { wordHtml, tsv: tsv + tsvLog };
             },
 
