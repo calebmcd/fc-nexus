@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.11
+// @version      13.12
 // @description  Unified terminal. Multi-User profiles, dynamic storage, native print, custom shortcuts. Export fixed.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -101,9 +101,23 @@
         },
         formatPet(name) { return this.toTitleCase(name); },
         formatFamily(name) {
+            if (!name) return '';
+
+            // Priority 1: Check if the family name is actually a clinic in the dictionary
+            const match = this.suggestClinicAcronym(name);
+            if (match) return match.acronym;
+
             const lower = name.toLowerCase();
-            if (/(rescue|society|animal|fund|county|clinic|hospital|shelter|sanctuary|foundation|league|project|trust|network)/.test(lower)) return this.toTitleCase(name);
-            const parts = name.trim().split(' '); return this.toTitleCase(parts[parts.length - 1]);
+
+            // Priority 2: Check for unknown clinics and route to standard clinic truncation
+            if (/(clinic|hospital|veterinary|vet)/.test(lower)) return this.formatClinic(name);
+
+            // Priority 3: Check for rescues/organizations and preserve the full Title Case name
+            if (/(rescue|society|animal|fund|county|shelter|sanctuary|foundation|league|project|trust|network)/.test(lower)) return this.toTitleCase(name);
+
+            // Priority 4: Standard family names (truncate to the last word)
+            const parts = name.trim().split(' ');
+            return this.toTitleCase(parts[parts.length - 1]);
         },
         formatClinic(name) {
             if (!name) return '';
