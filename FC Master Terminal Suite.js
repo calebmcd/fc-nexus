@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.7
+// @version      13.8
 // @description  Unified terminal. Multi-User profiles, dynamic storage, native print, custom shortcuts. Export fixed.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -14,17 +14,17 @@
 
     // --- Configuration & Constants ---
     const CONFIG = {
-        storage: {
+        storage: { 
             getKeys: (username) => ({
-                RAPID: `fc-rapid-log-${username}`,
-                COMM: `fc-comm-log-${username}`,
-                SETTINGS: `fc-master-settings-${username}`,
+                RAPID: `fc-rapid-log-${username}`, 
+                COMM: `fc-comm-log-${username}`, 
+                SETTINGS: `fc-master-settings-${username}`, 
                 SYNC: `fc-sync-queue-${username}`
             })
         },
         endpoints: { list: 'https://admin.faithfulcompanion.com/job/list', details: '/job/details/', updateStatus: 'https://admin.faithfulcompanion.com/job/updateStatus', print: 'https://admin.faithfulcompanion.com/job/print-details/' },
         formatters: {
-            // ADD SPECIFIC CLINIC ABBREVIATION OVERRIDES HERE
+            acronyms: ['AAE', 'OVRS', 'ARAR', 'GLPE', 'VES', 'VEC'],
             clinics: {
                 'WILSON VETERINARY HOSPITAL': 'Wilson Vet Hosp.',
                 'WAVERLY ANIMAL HOSPITAL': 'Waverly Vet Hosp.',
@@ -37,7 +37,6 @@
             shortcuts: { toggleRapid: 'Alt+R', toggleComm: 'Alt+C', focusSearch: 'Alt+F', closeTerminals: 'Escape' }
         }
     };
-
     // --- State Management ---
     const State = {
         currentUser: null, rapidLog: [], commLog: [], syncQueue: [], activePallet: 1, settings: { ...CONFIG.defaultSettings }, xrayCache: {}, viewAllRapid: false, viewAllComm: false,
@@ -85,11 +84,18 @@
                 const btn = document.getElementById(successBtnId); if (btn) { const old = btn.innerText; btn.innerText = 'Copied!'; setTimeout(() => btn.innerText = old, 2000); }
             } catch (err) { alert('Failed to copy. Check permissions.'); }
         },
-        toTitleCase(str) { return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()); },
+        toTitleCase(str) { 
+            return str.replace(/\w\S*/g, txt => {
+                const upper = txt.toUpperCase();
+                if (CONFIG.formatters.acronyms.includes(upper)) return upper;
+                if (!/[aeiouy]/i.test(txt)) return upper;
+                return txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase();
+            }); 
+        },
         formatPet(name) { return this.toTitleCase(name); },
         formatFamily(name) {
             const lower = name.toLowerCase();
-            if (/(rescue|society|animal|fund|county|clinic|hospital)/.test(lower)) return this.toTitleCase(name);
+            if (/(rescue|society|animal|fund|county|shelter|sanctuary|foundation|league|project|trust|network)/.test(lower)) return this.toTitleCase(name);
             const parts = name.trim().split(' '); return this.toTitleCase(parts[parts.length - 1]);
         },
         formatClinic(name) {
