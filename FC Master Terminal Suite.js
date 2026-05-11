@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.5
+// @version      13.7
 // @description  Unified terminal. Multi-User profiles, dynamic storage, native print, custom shortcuts. Export fixed.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -644,10 +644,9 @@
                     const rawPet = el('rapid-man-pet').value.trim();
                     if (!rawPet) { AudioService.play('alert'); const pInput = el('rapid-man-pet'); pInput.classList.remove('fc-shake'); void pInput.offsetWidth; pInput.classList.add('fc-shake'); return pInput.focus(); }
 
-                    // Wrap the raw inputs through the formatters
-                    const pName = Utils.formatPet(rawPet);
-                    const pFam = Utils.formatFamily(el('rapid-man-fam').value.trim());
-                    const pClin = Utils.formatClinic(el('rapid-man-clin').value.trim());
+                    const pName = rawPet;
+                    const pFam = el('rapid-man-fam').value.trim();
+                    const pClin = el('rapid-man-clin').value.trim();
                     const kText = el('rapid-man-keep').value.trim().toUpperCase() || 'X';
 
                     State.rapidLog.push({ jobId: `manual-${Date.now()}`, batch: State.rapidLog.length + 1, pet: pName, family: pFam, clinic: pClin, keepsakes: kText, hasKeepsakes: kText !== 'X', initials: State.settings.initials });
@@ -660,12 +659,11 @@
                     const idx = el('rapid-edit-index').value, row = State.rapidLog[idx]; if(!row) return;
                     const newKeep = el('rapid-edit-keep').value.trim().toUpperCase();
 
-                    // Wrap the edit inputs through the formatters
                     State.rapidLog[idx] = {
                         ...row,
-                        pet: Utils.formatPet(el('rapid-edit-pet').value.trim()) || row.pet,
-                        family: Utils.formatFamily(el('rapid-edit-fam').value.trim()),
-                        clinic: Utils.formatClinic(el('rapid-edit-clin').value.trim()),
+                        pet: el('rapid-edit-pet').value.trim() || row.pet,
+                        family: el('rapid-edit-fam').value.trim(),
+                        clinic: el('rapid-edit-clin').value.trim(),
                         keepsakes: newKeep || 'X',
                         hasKeepsakes: newKeep !== '' && newKeep !== 'X'
                     };
@@ -722,8 +720,10 @@
                     const specNode = doc.querySelector('.job_special_request'); if (specNode && specNode.innerText.trim()!=='') specReq = specNode.innerText.trim();
                     let kList = []; doc.querySelectorAll('.job-detail-items-section .custom-control-description').forEach(n => { let txt = n.innerText.trim().toLowerCase(), code = ''; if(txt.includes('clay paw')) code = 'CP'; else if(txt.includes('ink paw')) code = 'IP'; else if(txt.includes('ink nose')) code = 'IN'; else if(txt.includes('fur clip')||txt.includes('hair clip')) code = 'FC'; else if(txt.includes('photo')) code = 'PH'; else code = txt; let match = txt.match(/\(x(\d+)\)/); if(match && parseInt(match[1])>1 && code.length===2) code = match[1]+code; kList.push(code.toUpperCase()); });
                     const hasK = kList.length > 0; const kText = hasK ? kList.join(', ') : 'X';
+
                     this.pendingJob = { ...data, pet: Utils.formatPet(tPet), family: Utils.formatFamily(tFam), clinic: Utils.formatClinic(tClin), keepsakes: kText, hasKeepsakes: hasK };
-                    this.getEl('rapid-confirm-box').innerHTML = `<div><span class="fc-confirm-label">Type:</span> <span class="fc-confirm-val" style="color:#3498db; font-weight:bold;">${data.type}</span></div><div><span class="fc-confirm-label">Pet:</span> <span class="fc-confirm-val">${this.pendingJob.pet}</span></div><div><span class="fc-confirm-label">Family:</span> <span class="fc-confirm-val">${this.pendingJob.family}</span></div><div><span class="fc-confirm-label">Clinic:</span> <span class="fc-confirm-val">${this.pendingJob.clinic}</span></div><div><span class="fc-confirm-label">Keepsakes:</span> <span class="fc-confirm-val" style="color:${hasK?'#4cd137':'#fff'}; font-weight:bold;">${kText}</span></div><div><span class="fc-confirm-label">Special:</span> <span class="fc-confirm-val" style="color:${specReq!=='None'?'#ff6b6b':'#fff'}; font-weight:bold;">${specReq}</span></div><div class="fc-confirm-warn">Press ENTER to confirm, or ESC to cancel.</div>`;                    this.getEl('rapid-confirm-box').style.display = 'block'; App.Drag.ensureInBounds(this.getEl('rapid-term')); this.setStatus('Awaiting verification...', 'warning'); specReq !== 'None' ? AudioService.play('alert') : AudioService.play('found'); this.awaitingConfirm = true; this.getEl('rapid-input').disabled = false; this.getEl('rapid-input').focus();
+                    this.getEl('rapid-confirm-box').innerHTML = `<div><span class="fc-confirm-label">Type:</span> <span class="fc-confirm-val" style="color:#3498db; font-weight:bold;">${data.type}</span></div><div><span class="fc-confirm-label">Pet:</span> <span class="fc-confirm-val">${this.pendingJob.pet}</span></div><div><span class="fc-confirm-label">Family:</span> <span class="fc-confirm-val">${this.pendingJob.family}</span></div><div><span class="fc-confirm-label">Clinic:</span> <span class="fc-confirm-val">${this.pendingJob.clinic}</span></div><div><span class="fc-confirm-label">Keepsakes:</span> <span class="fc-confirm-val" style="color:${hasK?'#4cd137':'#fff'}; font-weight:bold;">${kText}</span></div><div><span class="fc-confirm-label">Special:</span> <span class="fc-confirm-val" style="color:${specReq!=='None'?'#ff6b6b':'#fff'}; font-weight:bold;">${specReq}</span></div><div class="fc-confirm-warn">Press ENTER to confirm, or ESC to cancel.</div>`;
+                    this.getEl('rapid-confirm-box').style.display = 'block'; App.Drag.ensureInBounds(this.getEl('rapid-term')); this.setStatus('Awaiting verification...', 'warning'); specReq !== 'None' ? AudioService.play('alert') : AudioService.play('found'); this.awaitingConfirm = true; this.getEl('rapid-input').disabled = false; this.getEl('rapid-input').focus();
                 } catch (err) { this.setStatus('Failed to fetch details.', 'error'); this.getEl('rapid-input').disabled = false; this.getEl('rapid-input').focus(); }
             },
 
@@ -877,10 +877,9 @@
 
                     let numW = 0; if (State.settings.commWeightMode === 'numeric') { numW = parseFloat(el('comm-weight').value) || 0; if(numW === 0) { alert("Please enter numeric weight in main view first."); this.toggleView('main'); el('comm-weight').focus(); return; } }
 
-                    // Wrap inputs, handling the Stray exception
-                    const pName = isStray && !rawPet ? 'Stray/Wildlife' : Utils.formatPet(rawPet);
-                    const pFam = isStray ? '' : Utils.formatFamily(el('comm-man-fam').value.trim());
-                    const pClin = Utils.formatClinic(el('comm-man-clin').value.trim());
+                    const pName = isStray && !rawPet ? 'Stray/Wildlife' : rawPet;
+                    const pFam = isStray ? '' : el('comm-man-fam').value.trim();
+                    const pClin = el('comm-man-clin').value.trim();
                     const kText = el('comm-man-keep').value.trim().toUpperCase() || 'X';
 
                     State.commLog.push({ jobId: 'manual-' + Date.now(), batch: State.commLog.length + 1, pallet: State.activePallet, size: el('comm-man-size').value, weightNum: numW, pet: pName, family: pFam, clinic: pClin, keepsakes: kText, hasKeepsakes: kText !== 'X', initials: State.settings.initials });
@@ -893,12 +892,11 @@
                     const newKeep = el('comm-edit-keep').value.trim().toUpperCase();
                     let newWeight = row.weightNum; if (State.settings.commWeightMode === 'numeric') { newWeight = parseFloat(el('comm-edit-weight').value) || 0; }
 
-                    // Wrap the edit inputs through the formatters
                     State.commLog[idx] = {
                         ...row,
-                        pet: Utils.formatPet(el('comm-edit-pet').value.trim()) || row.pet,
-                        family: Utils.formatFamily(el('comm-edit-fam').value.trim()),
-                        clinic: Utils.formatClinic(el('comm-edit-clin').value.trim()),
+                        pet: el('comm-edit-pet').value.trim() || row.pet,
+                        family: el('comm-edit-fam').value.trim(),
+                        clinic: el('comm-edit-clin').value.trim(),
                         size: el('comm-edit-size').value,
                         weightNum: newWeight,
                         keepsakes: newKeep || 'X',
@@ -938,7 +936,7 @@
                     doc.querySelectorAll('.inline_details_section').forEach(el => { const h4 = el.querySelector('h4'); if(h4) { const hdr = h4.innerText.trim(); if(hdr==='Family:') tFam = el.querySelector('h5') ? el.querySelector('h5').innerText.trim() : tFam; if(hdr==='Clinic:') tClin = el.querySelector('h5') ? el.querySelector('h5').innerText.trim() : tClin; if(hdr==='Pet:') tPet = el.querySelector('.request-detail-pet-name') ? el.querySelector('.request-detail-pet-name').innerText.trim() : tPet; if(hdr==='Size:') tSize = el.querySelector('h6') ? el.querySelector('h6').innerText.trim() : tSize; } });
                     let kList = []; doc.querySelectorAll('.job-detail-items-section .custom-control-description').forEach(n => { let txt = n.innerText.trim().toLowerCase(), code = ''; if(txt.includes('clay paw')) code = 'CP'; else if(txt.includes('ink paw')) code = 'IP'; else if(txt.includes('ink nose')) code = 'IN'; else if(txt.includes('fur clip')||txt.includes('hair clip')) code = 'FC'; else if(txt.includes('photo')) code = 'PH'; else code = txt; let match = txt.match(/\(x(\d+)\)/); if(match && parseInt(match[1])>1 && code.length===2) code = match[1]+code; kList.push(code.toUpperCase()); });
                     const hasK = kList.length > 0; const kText = hasK ? kList.join(', ') : 'X';
-                    // Replace the pendingJob assignment with this:
+
                     this.pendingJob = { ...data, pet: Utils.formatPet(tPet), family: Utils.formatFamily(tFam), clinic: Utils.formatClinic(tClin), keepsakes: kText, hasKeepsakes: hasK, size: tSize };
                     const actW = (State.settings.commWeightMode === 'numeric') ? `${this.getEl('comm-weight').value} lbs` : tSize;
                     this.getEl('comm-confirm-box').innerHTML = `<div><span class="fc-confirm-label">Pallet:</span> <span class="fc-confirm-val" style="color:#3498db; font-weight:bold;">${State.activePallet}</span></div><div><span class="fc-confirm-label">Weight:</span> <span class="fc-confirm-val" style="color:#3498db; font-weight:bold;">${actW}</span></div><div><span class="fc-confirm-label">Type:</span> <span class="fc-confirm-val" style="color:#3498db; font-weight:bold;">${data.type}</span></div><div><span class="fc-confirm-label">Pet:</span> <span class="fc-confirm-val">${this.pendingJob.pet}</span></div><div><span class="fc-confirm-label">Family:</span> <span class="fc-confirm-val">${this.pendingJob.family}</span></div><div><span class="fc-confirm-label">Keepsakes:</span> <span class="fc-confirm-val" style="color:${hasK?'#4cd137':'#fff'}; font-weight:bold;">${kText}</span></div><div class="fc-confirm-warn">Press ENTER to confirm to Pallet ${State.activePallet}.</div>`;
