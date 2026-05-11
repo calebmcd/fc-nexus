@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.9
+// @version      13.10
 // @description  Unified terminal. Multi-User profiles, dynamic storage, native print, custom shortcuts. Export fixed.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -216,6 +216,7 @@
                         <div class="fc-setting-row"><label style="color:#ffb800;">Native UI Print Button:</label><input type="checkbox" id="global-set-nativeprint"></div>
                         <div class="fc-setting-row"><label style="color:#ffb800;">Enable X-Ray Vision:</label><input type="checkbox" id="global-set-xray"></div>
                         <div class="fc-setting-row"><label style="color:#ffb800;">Simulate Offline Mode:</label><input type="checkbox" id="global-set-offline"></div>
+                        <div class="fc-setting-row" style="border-top: 1px solid #444; padding-top: 12px; margin-top: 10px;"><button id="global-dev-migrate" class="fc-action-btn-copy" style="width:100%; background:#e74c3c; color:#fff;" title="Force all current logs through the latest auto-formatter and fuzzy matcher">Migrate Legacy Logs</button></div>
                     </div>
                     <div class="fc-btn-row" style="margin-top: 15px;"><button id="global-shortcuts-btn" class="fc-action-btn" style="background:#5dade2; color:#fff;">Keyboard Shortcuts</button></div>
                     <div class="fc-btn-row" style="margin-top: 5px;"><button id="global-settings-save" class="fc-action-btn" style="background:#2ecc71; color:#000;">Save Settings</button><button id="global-settings-cancel" class="fc-action-btn-clear" style="background:#5a5a5a;">Cancel</button></div>
@@ -337,12 +338,51 @@
             },
             bindEvents() {
                 const el = id => document.getElementById(id);
+                const migrateBtn = el('global-dev-migrate');
+                if (migrateBtn) {
+                    migrateBtn.addEventListener('click', () => {
+                        if (!confirm("This will run all current log entries through the new formatting and acronym rules. Proceed?")) return;
+
+                        let updatedRapid = 0, updatedComm = 0;
+
+                        State.rapidLog = State.rapidLog.map(row => {
+                            const c = row.clinic || '';
+                            const match = Utils.suggestClinicAcronym(c);
+                            updatedRapid++;
+                            return {
+                                ...row,
+                                pet: Utils.formatPet(row.pet || ''),
+                                family: Utils.formatFamily(row.family || ''),
+                                clinic: match ? match.acronym : Utils.formatClinic(c)
+                            };
+                        });
+
+                        State.commLog = State.commLog.map(row => {
+                            const c = row.clinic || '';
+                            const match = Utils.suggestClinicAcronym(c);
+                            updatedComm++;
+                            return {
+                                ...row,
+                                pet: (row.pet === 'Stray/Wildlife') ? row.pet : Utils.formatPet(row.pet || ''),
+                                family: (row.pet === 'Stray/Wildlife') ? '' : Utils.formatFamily(row.family || ''),
+                                clinic: match ? match.acronym : Utils.formatClinic(c)
+                            };
+                        });
+
+                        State.saveRapid();
+                        State.saveComm();
+                        App.Rapid.renderLog();
+                        App.Comm.renderLog();
+                        AudioService.play('success');
+                        alert(`Migration Complete!\nRe-formatted ${updatedRapid} Check-In records and ${updatedComm} Cremation records.`);
+                    });
+                }
                 el('global-settings-save').addEventListener('click', () => {
                     State.settings.initials = el('global-set-initials').value.trim().toUpperCase() || 'CM'; State.settings.soundEnabled = el('global-set-audio').checked; State.settings.audioVolume = parseFloat(el('global-set-volume').value); State.settings.terminalOpacity = parseFloat(el('global-set-opacity').value); State.settings.searchDays = parseInt(el('global-set-days').value) || 60; State.settings.defaultPosition = el('global-set-position').value; State.settings.nativePrintEnabled = el('global-set-nativeprint').checked; State.settings.xrayEnabled = el('global-set-xray').checked; State.settings.simulateOffline = el('global-set-offline').checked;
                     State.saveSettings(); this.applyOpacity(); App.Drag.applyDefaultCSS(el('rapid-term'), 'rapid'); App.Drag.applyDefaultCSS(el('comm-term'), 'comm'); el('global-settings-panel').style.display = 'none';
                 });
-                el('global-settings-cancel').addEventListener('click', () => el('global-settings-panel').style.display = 'none');
-                el('global-minimize-btn').addEventListener('click', () => el('global-settings-panel').style.display = 'none');
+                el('global-settings-cancel').addEventListener('click', () => { el('global-settings-panel').style.display = 'none'; });
+                el('global-minimize-btn').addEventListener('click', () => { el('global-settings-panel').style.display = 'none'; });
             },
             toggleView() {
                 const panel = document.getElementById('global-settings-panel');
