@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.10
+// @version      13.11
 // @description  Unified terminal. Multi-User profiles, dynamic storage, native print, custom shortcuts. Export fixed.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -106,8 +106,15 @@
             const parts = name.trim().split(' '); return this.toTitleCase(parts[parts.length - 1]);
         },
         formatClinic(name) {
+            if (!name) return '';
+
+            // Priority 1: Check the dictionary via safe fuzzy matching
+            const match = this.suggestClinicAcronym(name);
+            if (match) return match.acronym;
+
+            // Priority 2: Fallback exact match and truncation rules
             const upper = name.toUpperCase().trim();
-            if (CONFIG.formatters.clinics[upper]) return CONFIG.formatters.clinics[upper];
+            if (CONFIG.formatters.clinics && CONFIG.formatters.clinics[upper]) return CONFIG.formatters.clinics[upper];
             let n = this.toTitleCase(name);
             return n.replace(/Veterinary/g, 'Vet').replace(/Hospital/g, 'Hosp.').replace(/Animal/g, 'Anim.').replace(/Center/g, 'Ctr.');
         },
@@ -117,7 +124,7 @@
                 return str.replace(/[.,\-\/#!$%\^&\*;:{}=\-_`~()]/g, "")
                           .toLowerCase()
                           .split(/\s+/)
-                          .filter(w => !['veterinary', 'vet', 'animal', 'hospital', 'hosp', 'clinic', 'center', 'care', 'services', 'inc', 'llc', 'of'].includes(w))
+                          .filter(w => !['veterinary', 'vet', 'animal', 'anim', 'hospital', 'hosp', 'clinic', 'center', 'ctr', 'care', 'services', 'inc', 'llc', 'of'].includes(w))
                           .join(' ')
                           .trim();
             };
