@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.15
+// @version      13.16
 // @description  Unified terminal. Multi-User profiles, dynamic storage, native print, custom shortcuts. Export fixed.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -80,13 +80,13 @@
     // --- Utility / Helpers ---
     const Utils = {
         stripHtml(html) { const tmp = document.createElement('div'); tmp.innerHTML = html || ''; return tmp.textContent.trim(); },
-        getFilterDateRange(overrideDays) { 
-            const d = new Date(); 
-            const fmt = date => `${('0' + (date.getMonth() + 1)).slice(-2)}/${('0' + date.getDate()).slice(-2)}/${date.getFullYear()}`; 
-            const end = fmt(d); 
+        getFilterDateRange(overrideDays) {
+            const d = new Date();
+            const fmt = date => `${('0' + (date.getMonth() + 1)).slice(-2)}/${('0' + date.getDate()).slice(-2)}/${date.getFullYear()}`;
+            const end = fmt(d);
             const lookback = overrideDays !== undefined ? overrideDays : (State.settings.searchDays || 60);
-            d.setDate(d.getDate() - lookback); 
-            return `${fmt(d)} - ${end}`; 
+            d.setDate(d.getDate() - lookback);
+            return `${fmt(d)} - ${end}`;
         },
         buildDataTablesPayload(searchTerm, isClosed, overrideDays) {
             const params = new URLSearchParams({ draw: 1, start: 0, length: 20, 'search[value]': searchTerm, 'search[regex]': false, job_filter_order: 0, job_filter_status_id: 0, job_filter_type_id: 0, job_filter_period: this.getFilterDateRange(overrideDays), show_completed_orders: isClosed.toString(), 'order[0][column]': 4, 'order[0][dir]': 'DESC' });
@@ -197,7 +197,8 @@
 
     // --- API Service ---
     const API = {
-        async searchJobs(searchTerm, primaryStatus, secondaryStatus) {
+        async searchJobs(searchTerm, isClosed = 1, overrideDays = undefined) {
+            const payload = Utils.buildDataTablesPayload(searchTerm, isClosed, overrideDays);
             let p1 = Utils.buildDataTablesPayload(searchTerm, primaryStatus);
             let res1 = await fetch(CONFIG.endpoints.list, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "X-Requested-With": "XMLHttpRequest" }, body: p1 });
             let data1 = await res1.json(); let rows = data1.data || [];
@@ -259,7 +260,7 @@
                         <div class="fc-setting-row"><label style="color:#ffb800;">Native UI Print Button:</label><input type="checkbox" id="global-set-nativeprint"></div>
                         <div class="fc-setting-row"><label style="color:#ffb800;">Enable X-Ray Vision:</label><input type="checkbox" id="global-set-xray"></div>
                         <div class="fc-setting-row"><label style="color:#ffb800;">Simulate Offline Mode:</label><input type="checkbox" id="global-set-offline"></div>
-                        
+
                         <div class="fc-setting-row" style="margin-top: 10px;"><label style="color:#ffb800;">Normal Scan (Days):</label><input type="number" id="global-set-comm-normal" class="fc-setting-input" style="width:60px;"></div>
                         <div class="fc-setting-row"><label style="color:#ffb800;">Deep Scan (Days):</label><input type="number" id="global-set-comm-deep" class="fc-setting-input" style="width:60px;"></div>
                         <div class="fc-setting-row"><label style="color:#ffb800;">Enable Local Cache Check:</label><input type="checkbox" id="global-set-cache"></div>
@@ -459,7 +460,7 @@
                     el('global-set-opacity').value = State.settings.terminalOpacity || 0.95;
                     el('global-set-volume').value = State.settings.audioVolume || 0.1;
                     el('global-set-dev').checked = State.settings.devMode || false;
-                    
+
                     el('global-set-days').value = State.settings.searchDays || 60;
                     el('global-set-nativeprint').checked = State.settings.nativePrintEnabled;
                     el('global-set-xray').checked = State.settings.xrayEnabled;
@@ -1102,8 +1103,91 @@
                         finalizeCommEdit(idx, row, ePet, eFam, rawClin, newKeep, newWeight, sizeVal);
                     }
                 });
+
                 el('comm-weight').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if(el('comm-input').value.trim()!=='') el('comm-input').dispatchEvent(new KeyboardEvent('keypress',{'key':'Enter'})); else el('comm-input').focus(); } });
-                el('comm-input').addEventListener('keypress', async e => { if (e.key !== 'Enter') return; if (this.awaitingConfirm) { e.preventDefault(); await this.executeCheckIn(); return; } const term = el('comm-input').value.trim(); if (!term) return; let numW = 0; if (State.settings.commWeightMode === 'numeric') { numW = parseFloat(el('comm-weight').value) || 0; if(numW===0 && term.toLowerCase()!=='test') { this.setStatus("Enter numeric weight first.", 'warning'); el('comm-weight').focus(); return; } } if (term.toLowerCase() === 'test') { el('comm-input').value = ''; el('comm-weight').value = ''; let testArr = [{p:'Garfield',s:'Large',pal:1},{p:'Snoopy',s:'Medium',pal:1},{p:'Scooby',s:'Large',pal:1},{p:'Tom',s:'Small',pal:2},{p:'Pluto',s:'Medium',pal:2},{p:'Goofy',s:'Large',pal:2}]; if (State.settings.commPalletCount > 2) testArr.push({p:'Porky',s:'Medium',pal:3}); if (State.settings.commPalletCount > 3) testArr.push({p:'Bugs',s:'Small',pal:4}); testArr.forEach((d,i) => { let w = d.s==='Small'?12 : d.s==='Medium'?40 : 85; State.commLog.push({ jobId:'test-'+Date.now()+'-'+i, batch:State.commLog.length+1, pallet:d.pal, size:d.s, weightNum:w, pet:d.p, family:'Fam', clinic:'Vet', keepsakes:'X', hasKeepsakes:false, initials:State.settings.initials }); }); State.saveComm(); this.renderLog(); this.setStatus('Secret: Fake records injected.', 'success'); AudioService.play('success'); return; } el('comm-input').value = ''; el('comm-input').disabled = true; el('comm-tiebreaker-list').style.display = 'none'; el('comm-confirm-box').style.display = 'none'; this.setStatus(`Searching for "${term}"...`, 'neutral'); try { const matches = await API.searchJobs(term, 1, 0); if (matches.length === 0) { this.setStatus(`No exact matches for "${term}".`, 'error'); el('comm-input').disabled = false; el('comm-input').focus(); } else if (matches.length === 1) { this.previewJob(matches[0]); } else { this.setStatus(`Found ${matches.length} matches. Select one:`, 'warning'); const ties = this.getEl('comm-tiebreaker-list'); ties.innerHTML = ''; matches.forEach(m => { const btn = document.createElement('button'); btn.className = 'fc-tie-btn'; btn.innerHTML = `<div style="font-size:14px; font-weight:bold; color:#3498db; margin-bottom:2px;">${m.pet}</div><div style="font-size:12px; color:#fff;">Family: ${m.family}</div><div class="fc-tie-clinic">Clinic: ${m.clinic} | ID: ${m.reqId} | Crem ID: ${m.cremId}</div>`; btn.onclick = () => { ties.style.display = 'none'; ties.innerHTML = ''; this.previewJob(m); }; ties.appendChild(btn); }); ties.style.display = 'block'; } } catch (err) { this.setStatus('Network error.', 'error'); el('comm-input').disabled = false; el('comm-input').focus(); } });
+
+                el('comm-input').addEventListener('keypress', async e => {
+                    if (e.key !== 'Enter') return;
+                    if (this.awaitingConfirm) { e.preventDefault(); await this.executeCheckIn(); return; }
+
+                    const term = el('comm-input').value.trim();
+                    if (!term) return;
+
+                    let numW = 0;
+                    if (State.settings.commWeightMode === 'numeric') {
+                        numW = parseFloat(el('comm-weight').value) || 0;
+                        if(numW === 0 && term.toLowerCase() !== 'test') {
+                            this.setStatus("Enter numeric weight first.", 'warning');
+                            el('comm-weight').focus();
+                            return;
+                        }
+                    }
+
+                    if (term.toLowerCase() === 'test') {
+                        el('comm-input').value = ''; el('comm-weight').value = '';
+                        let testArr = [{p:'Garfield',s:'Large',pal:1},{p:'Snoopy',s:'Medium',pal:1},{p:'Scooby',s:'Large',pal:1},{p:'Tom',s:'Small',pal:2},{p:'Pluto',s:'Medium',pal:2},{p:'Goofy',s:'Large',pal:2}];
+                        if (State.settings.commPalletCount > 2) testArr.push({p:'Porky',s:'Medium',pal:3});
+                        if (State.settings.commPalletCount > 3) testArr.push({p:'Bugs',s:'Small',pal:4});
+                        testArr.forEach((d,i) => {
+                            let w = d.s==='Small'?12 : d.s==='Medium'?40 : 85;
+                            State.commLog.push({ jobId:'test-'+Date.now()+'-'+i, batch:State.commLog.length+1, pallet:d.pal, size:d.s, weightNum:w, pet:d.p, family:'Fam', clinic:'Vet', keepsakes:'X', hasKeepsakes:false, initials:State.settings.initials });
+                        });
+                        State.saveComm(); this.renderLog(); this.setStatus('Secret: Fake records injected.', 'success'); AudioService.play('success');
+                        return;
+                    }
+
+                    el('comm-input').value = '';
+                    el('comm-input').disabled = true;
+                    el('comm-tiebreaker-list').style.display = 'none';
+                    el('comm-confirm-box').style.display = 'none';
+
+                    try {
+                        // Phase 1: Local Cache Intercept
+                        if (State.settings.enableLocalCache) {
+                            const cachedJob = State.rapidLog.find(j => j.jobId === term || j.reqId === term || j.cremId === term);
+                            if (cachedJob) {
+                                this.setStatus('Resolved via local cache (0ms).', 'success');
+                                this.previewJob(cachedJob);
+                                return;
+                            }
+                        }
+
+                        // Phase 2: Normal DB Scan
+                        this.setStatus(`Quick scan (${State.settings.commSearchDaysNormal}d) for "${term}"...`, 'neutral');
+                        let matches = await API.searchJobs(term, 1, State.settings.commSearchDaysNormal);
+
+                        // Phase 3: Progressive Deep Scan Cascade
+                        if (matches.length === 0) {
+                            this.setStatus(`Deep scan (${State.settings.commSearchDaysDeep}d) for "${term}"...`, 'warning');
+                            matches = await API.searchJobs(term, 1, State.settings.commSearchDaysDeep);
+                        }
+
+                        // Match Evaluation
+                        if (matches.length === 0) {
+                            this.setStatus(`No exact matches for "${term}".`, 'error');
+                            el('comm-input').disabled = false;
+                            el('comm-input').focus();
+                        } else if (matches.length === 1) {
+                            this.previewJob(matches[0]);
+                        } else {
+                            this.setStatus(`Found ${matches.length} matches. Select one:`, 'warning');
+                            const ties = this.getEl('comm-tiebreaker-list');
+                            ties.innerHTML = '';
+                            matches.forEach(m => {
+                                const btn = document.createElement('button');
+                                btn.className = 'fc-tie-btn';
+                                btn.innerHTML = `<div style="font-size:14px; font-weight:bold; color:#3498db; margin-bottom:2px;">${m.pet}</div><div style="font-size:12px; color:#fff;">Family: ${m.family}</div><div class="fc-tie-clinic">Clinic: ${m.clinic} | ID: ${m.reqId} | Crem ID: ${m.cremId}</div>`;
+                                btn.onclick = () => { ties.style.display = 'none'; ties.innerHTML = ''; this.previewJob(m); };
+                                ties.appendChild(btn);
+                            });
+                            ties.style.display = 'block';
+                        }
+                    } catch (err) {
+                        this.setStatus('Network error.', 'error');
+                        el('comm-input').disabled = false;
+                        el('comm-input').focus();
+                    }
+                });
 
                 el('comm-clear-btn').addEventListener('click', () => { if (confirm('Clear entire communal log?')) { State.commLog = []; State.saveComm(); this.renderLog(); this.setStatus('Log cleared.', 'neutral'); } });
                 el('comm-copy-btn').addEventListener('click', () => this.exportLog(false)); el('comm-print-btn').addEventListener('click', () => this.exportLog(true));
