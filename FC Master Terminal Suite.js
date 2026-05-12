@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.12.1
+// @version      13.13
 // @description  Unified terminal. Multi-User profiles, dynamic storage, native print, custom shortcuts. Export fixed.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -91,9 +91,14 @@
             } catch (err) { alert('Failed to copy. Check permissions.'); }
         },
         toTitleCase(str) {
+            // Dynamically build whitelist from explicit acronyms and all clinicMap values
+            const mapValues = Object.values(CONFIG.formatters.clinicMap);
+            const dynamicAcronyms = mapValues.flatMap(val => val.split(' '));
+            const whitelist = [...new Set([...CONFIG.formatters.acronyms, ...dynamicAcronyms])];
+
             return str.replace(/\w\S*/g, txt => {
                 const upper = txt.toUpperCase();
-                if (CONFIG.formatters.acronyms.includes(upper)) return upper;
+                if (whitelist.includes(upper)) return upper;
                 if (!/[aeiouy]/i.test(txt)) return upper;
                 return txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase();
             });
@@ -101,6 +106,14 @@
         formatPet(name) { return this.toTitleCase(name); },
         formatFamily(name) {
             if (!name) return '';
+
+            const upperInput = name.toUpperCase().trim();
+            const mapValues = Object.values(CONFIG.formatters.clinicMap);
+
+            // Priority 0: Exact match preservation for known acronyms
+            if (CONFIG.formatters.acronyms.includes(upperInput) || mapValues.includes(upperInput)) {
+                return upperInput;
+            }
 
             // Priority 1: Check if the family name is actually a clinic in the dictionary
             const match = this.suggestClinicAcronym(name);
@@ -121,13 +134,20 @@
         formatClinic(name) {
             if (!name) return '';
 
+            const upperInput = name.toUpperCase().trim();
+            const mapValues = Object.values(CONFIG.formatters.clinicMap);
+
+            // Priority 0: Exact match preservation for known acronyms
+            if (CONFIG.formatters.acronyms.includes(upperInput) || mapValues.includes(upperInput)) {
+                return upperInput;
+            }
+
             // Priority 1: Check the dictionary via safe fuzzy matching
             const match = this.suggestClinicAcronym(name);
             if (match) return match.acronym;
 
             // Priority 2: Fallback exact match and truncation rules
-            const upper = name.toUpperCase().trim();
-            if (CONFIG.formatters.clinics && CONFIG.formatters.clinics[upper]) return CONFIG.formatters.clinics[upper];
+            if (CONFIG.formatters.clinics && CONFIG.formatters.clinics[upperInput]) return CONFIG.formatters.clinics[upperInput];
             let n = this.toTitleCase(name);
             return n.replace(/Veterinary/g, 'Vet').replace(/Hospital/g, 'Hosp.').replace(/Animal/g, 'Anim.').replace(/Center/g, 'Ctr.');
         },
