@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.14.4
+// @version      13.15
 // @description  Unified terminal. Multi-User profiles, dynamic storage, native print, custom shortcuts. Export fixed.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -38,6 +38,7 @@
 
         defaultSettings: {
             initials: null, soundEnabled: true, rapidAutoPrint: true, commWeightMode: 'size', commSWeight: 10, commMWeight: 35, commLWeight: 70, commSummaryFormat: 'split', commColorCode: true, commPalletCount: 2, commExportFormat: 'combined', xrayEnabled: true, nativePrintEnabled: true, searchDays: 60, maxCombinedWeight: 3000, defaultPosition: 'bottom-right', terminalOpacity: 0.95, audioVolume: 0.1, devMode: false, simulateOffline: false,
+            commSearchDaysNormal: 7, commSearchDaysDeep: 60, enableLocalCache: true,
             positions: { rapid: { top: null, left: null, width: '480px', height: 'auto' }, comm: { top: null, left: null, width: '480px', height: 'auto' }, global: { top: null, left: null, width: '400px', height: 'auto' } },
             shortcuts: { toggleRapid: 'Alt+R', toggleComm: 'Alt+C', focusSearch: 'Alt+F', closeTerminals: 'Escape' }
         }
@@ -79,9 +80,16 @@
     // --- Utility / Helpers ---
     const Utils = {
         stripHtml(html) { const tmp = document.createElement('div'); tmp.innerHTML = html || ''; return tmp.textContent.trim(); },
-        getFilterDateRange() { const d = new Date(), fmt = date => `${('0' + (date.getMonth() + 1)).slice(-2)}/${('0' + date.getDate()).slice(-2)}/${date.getFullYear()}`; const end = fmt(d); d.setDate(d.getDate() - (State.settings.searchDays || 60)); return `${fmt(d)} - ${end}`; },
-        buildDataTablesPayload(searchTerm, isClosed) {
-            const params = new URLSearchParams({ draw: 1, start: 0, length: 20, 'search[value]': searchTerm, 'search[regex]': false, job_filter_order: 0, job_filter_status_id: 0, job_filter_type_id: 0, job_filter_period: this.getFilterDateRange(), show_completed_orders: isClosed.toString(), 'order[0][column]': 4, 'order[0][dir]': 'DESC' });
+        getFilterDateRange(overrideDays) { 
+            const d = new Date(); 
+            const fmt = date => `${('0' + (date.getMonth() + 1)).slice(-2)}/${('0' + date.getDate()).slice(-2)}/${date.getFullYear()}`; 
+            const end = fmt(d); 
+            const lookback = overrideDays !== undefined ? overrideDays : (State.settings.searchDays || 60);
+            d.setDate(d.getDate() - lookback); 
+            return `${fmt(d)} - ${end}`; 
+        },
+        buildDataTablesPayload(searchTerm, isClosed, overrideDays) {
+            const params = new URLSearchParams({ draw: 1, start: 0, length: 20, 'search[value]': searchTerm, 'search[regex]': false, job_filter_order: 0, job_filter_status_id: 0, job_filter_type_id: 0, job_filter_period: this.getFilterDateRange(overrideDays), show_completed_orders: isClosed.toString(), 'order[0][column]': 4, 'order[0][dir]': 'DESC' });
             for (let i = 0; i <= 13; i++) { params.append(`columns[${i}][data]`, i); params.append(`columns[${i}][name]`, ''); params.append(`columns[${i}][searchable]`, (i !== 2).toString()); params.append(`columns[${i}][orderable]`, (i !== 2 && i !== 13).toString()); params.append(`columns[${i}][search][value]`, ''); params.append(`columns[${i}][search][regex]`, 'false'); }
             return params.toString();
         },
@@ -251,6 +259,11 @@
                         <div class="fc-setting-row"><label style="color:#ffb800;">Native UI Print Button:</label><input type="checkbox" id="global-set-nativeprint"></div>
                         <div class="fc-setting-row"><label style="color:#ffb800;">Enable X-Ray Vision:</label><input type="checkbox" id="global-set-xray"></div>
                         <div class="fc-setting-row"><label style="color:#ffb800;">Simulate Offline Mode:</label><input type="checkbox" id="global-set-offline"></div>
+                        
+                        <div class="fc-setting-row" style="margin-top: 10px;"><label style="color:#ffb800;">Normal Scan (Days):</label><input type="number" id="global-set-comm-normal" class="fc-setting-input" style="width:60px;"></div>
+                        <div class="fc-setting-row"><label style="color:#ffb800;">Deep Scan (Days):</label><input type="number" id="global-set-comm-deep" class="fc-setting-input" style="width:60px;"></div>
+                        <div class="fc-setting-row"><label style="color:#ffb800;">Enable Local Cache Check:</label><input type="checkbox" id="global-set-cache"></div>
+
                         <div class="fc-setting-row" style="border-top: 1px solid #444; padding-top: 12px; margin-top: 10px;"><button id="global-dev-migrate" class="fc-action-btn-copy" style="width:100%; background:#e74c3c; color:#fff;" title="Force all current logs through the latest auto-formatter and fuzzy matcher">Migrate Legacy Logs</button></div>
                     </div>
                     <div class="fc-btn-row" style="margin-top: 15px;"><button id="global-shortcuts-btn" class="fc-action-btn" style="background:#5dade2; color:#fff;">Keyboard Shortcuts</button></div>
@@ -413,21 +426,52 @@
                     });
                 }
                 el('global-settings-save').addEventListener('click', () => {
-                    State.settings.initials = el('global-set-initials').value.trim().toUpperCase() || 'CM'; State.settings.soundEnabled = el('global-set-audio').checked; State.settings.audioVolume = parseFloat(el('global-set-volume').value); State.settings.terminalOpacity = parseFloat(el('global-set-opacity').value); State.settings.searchDays = parseInt(el('global-set-days').value) || 60; State.settings.defaultPosition = el('global-set-position').value; State.settings.nativePrintEnabled = el('global-set-nativeprint').checked; State.settings.xrayEnabled = el('global-set-xray').checked; State.settings.simulateOffline = el('global-set-offline').checked;
-                    State.saveSettings(); this.applyOpacity(); App.Drag.applyDefaultCSS(el('rapid-term'), 'rapid'); App.Drag.applyDefaultCSS(el('comm-term'), 'comm'); el('global-settings-panel').style.display = 'none';
+                    State.settings.initials = el('global-set-initials').value.trim().toUpperCase() || null;
+                    State.settings.soundEnabled = el('global-set-sound').checked;
+                    State.settings.terminalOpacity = parseFloat(el('global-set-opacity').value) || 0.95;
+                    State.settings.audioVolume = parseFloat(el('global-set-volume').value) || 0.1;
+                    State.settings.devMode = el('global-set-dev').checked;
+
+                    State.settings.searchDays = parseInt(el('global-set-days').value) || 60;
+                    State.settings.nativePrintEnabled = el('global-set-nativeprint').checked;
+                    State.settings.xrayEnabled = el('global-set-xray').checked;
+                    State.settings.simulateOffline = el('global-set-offline').checked;
+
+                    State.settings.commSearchDaysNormal = parseInt(el('global-set-comm-normal').value) || 7;
+                    State.settings.commSearchDaysDeep = parseInt(el('global-set-comm-deep').value) || 60;
+                    State.settings.enableLocalCache = el('global-set-cache').checked;
+
+                    State.saveSettings();
+                    this.applySettings();
+                    App.Rapid.applySettings();
+                    App.Comm.applySettings();
+                    el('global-settings-panel').style.display = 'none';
                 });
                 el('global-settings-cancel').addEventListener('click', () => { el('global-settings-panel').style.display = 'none'; });
                 el('global-minimize-btn').addEventListener('click', () => { el('global-settings-panel').style.display = 'none'; });
             },
-            toggleView() {
-                const panel = document.getElementById('global-settings-panel');
-                if (panel.style.display === 'block') { panel.style.display = 'none'; } else {
-                    const el = id => document.getElementById(id);
-                    el('global-set-initials').value = State.settings.initials; el('global-set-audio').checked = State.settings.soundEnabled; el('global-set-volume').value = State.settings.audioVolume; el('global-set-opacity').value = State.settings.terminalOpacity; el('global-set-days').value = State.settings.searchDays; el('global-set-position').value = State.settings.defaultPosition || 'bottom-right'; el('global-set-nativeprint').checked = State.settings.nativePrintEnabled; el('global-set-xray').checked = State.settings.xrayEnabled; el('global-set-offline').checked = State.settings.simulateOffline || false;
-                    this.applyDevMode(); document.getElementById('global-settings-main').style.display = 'block'; document.getElementById('shortcuts-view').style.display = 'none'; panel.style.display = 'block';
+            toggleView(view) {
+                const el = this.getEl;
+                el('global-settings-panel').style.display = view === 'main' ? 'block' : 'none';
+                if (view === 'main') {
+                    el('global-set-initials').value = State.settings.initials || '';
+                    el('global-set-sound').checked = State.settings.soundEnabled;
+                    el('global-set-opacity').value = State.settings.terminalOpacity || 0.95;
+                    el('global-set-volume').value = State.settings.audioVolume || 0.1;
+                    el('global-set-dev').checked = State.settings.devMode || false;
+                    
+                    el('global-set-days').value = State.settings.searchDays || 60;
+                    el('global-set-nativeprint').checked = State.settings.nativePrintEnabled;
+                    el('global-set-xray').checked = State.settings.xrayEnabled;
+                    el('global-set-offline').checked = State.settings.simulateOffline;
+
+                    el('global-set-comm-normal').value = State.settings.commSearchDaysNormal || 7;
+                    el('global-set-comm-deep').value = State.settings.commSearchDaysDeep || 60;
+                    el('global-set-cache').checked = State.settings.enableLocalCache !== false;
+
+                    el('dev-settings-container').style.display = (State.settings.devMode || false) ? 'block' : 'none';
                 }
-            }
-        },
+            },
 
         Shortcuts: {
             isListening: null,
