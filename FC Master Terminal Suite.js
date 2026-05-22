@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.17
+// @version      13.18
 // @description Enhances the Faithful Companion admin portal with optimized Check-In and Communal scanning terminals. Features include progressive Two-Tier database querying, local memory caching, intelligent string normalization with fuzzy acronym matching, automated pallet and weight tracking, and formatted HTML/TSV export generation.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -420,10 +420,9 @@
 
                 el('global-settings-save').addEventListener('click', () => {
                     State.settings.initials = el('global-set-initials').value.trim().toUpperCase() || null;
-                    State.settings.soundEnabled = el('global-set-sound').checked;
+                    State.settings.soundEnabled = el('global-set-audio').checked;
                     State.settings.terminalOpacity = parseFloat(el('global-set-opacity').value) || 0.95;
                     State.settings.audioVolume = parseFloat(el('global-set-volume').value) || 0.1;
-                    State.settings.devMode = el('global-set-dev').checked;
 
                     State.settings.searchDays = parseInt(el('global-set-days').value) || 60;
                     State.settings.nativePrintEnabled = el('global-set-nativeprint').checked;
@@ -449,10 +448,9 @@
                 el('global-settings-panel').style.display = view === 'main' ? 'block' : 'none';
                 if (view === 'main') {
                     el('global-set-initials').value = State.settings.initials || '';
-                    el('global-set-sound').checked = State.settings.soundEnabled;
+                    el('global-set-audio').checked = State.settings.soundEnabled;
                     el('global-set-opacity').value = State.settings.terminalOpacity || 0.95;
                     el('global-set-volume').value = State.settings.audioVolume || 0.1;
-                    el('global-set-dev').checked = State.settings.devMode || false;
 
                     el('global-set-days').value = State.settings.searchDays || 60;
                     el('global-set-nativeprint').checked = State.settings.nativePrintEnabled;
