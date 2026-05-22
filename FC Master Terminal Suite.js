@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.18
+// @version      13.19
 // @description Enhances the Faithful Companion admin portal with optimized Check-In and Communal scanning terminals. Features include progressive Two-Tier database querying, local memory caching, intelligent string normalization with fuzzy acronym matching, automated pallet and weight tracking, and formatted HTML/TSV export generation.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -849,7 +849,7 @@
                     el('rapid-input').value = ''; el('rapid-input').disabled = true; el('rapid-tiebreaker-list').style.display = 'none'; el('rapid-confirm-box').style.display = 'none';
                     this.setStatus(`Searching for "${term}"...`, 'neutral');
                     try {
-                        const matches = await API.searchJobs(term, 0, 1);
+                        const matches = await API.searchJobs(term, 0); // Removed vestigial parameter collision
                         if (matches.length === 0) { this.setStatus(`No exact matches for "${term}".`, 'error'); el('rapid-input').disabled = false; el('rapid-input').focus(); }
                         else if (matches.length === 1) { this.previewJob(matches[0]); }
                         else {
