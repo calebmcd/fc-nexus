@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.19
+// @version      13.20
 // @description Enhances the Faithful Companion admin portal with optimized Check-In and Communal scanning terminals. Features include progressive Two-Tier database querying, local memory caching, intelligent string normalization with fuzzy acronym matching, automated pallet and weight tracking, and formatted HTML/TSV export generation.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -1148,12 +1148,18 @@
                             }
                         }
 
-                        // Phase 2: Normal DB Scan
+                        // Phase 2: Normal DB Scan (Closed Records)
                         const normalDays = State.settings.commSearchDaysNormal || 7;
                         this.setStatus(`Quick scan (${normalDays}d) for "${term}"...`, 'neutral');
                         let matches = await API.searchJobs(term, 1, normalDays);
 
-                        // Phase 3: Progressive Deep Scan Cascade
+                        // Phase 3: Active Orders (Open Records)
+                        if (matches.length === 0) {
+                            this.setStatus(`Checking active orders for "${term}"...`, 'neutral');
+                            matches = await API.searchJobs(term, 0);
+                        }
+
+                        // Phase 4: Progressive Deep Scan Cascade (Historical Closed Records)
                         if (matches.length === 0) {
                             const deepDays = State.settings.commSearchDaysDeep || 60;
                             this.setStatus(`Deep scan (${deepDays}d) for "${term}"...`, 'warning');
