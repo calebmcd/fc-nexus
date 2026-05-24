@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.5
-// @description  Unified terminal. Multi-User profiles, dynamic storage, native print, custom shortcuts. Export fixed.
+// @version      13.20.1
+// @description Enhances the Faithful Companion admin portal with optimized Check-In and Communal scanning terminals. Features include progressive Two-Tier database querying, local memory caching, intelligent string normalization with fuzzy acronym matching, automated pallet and weight tracking, and formatted HTML/TSV export generation.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
 // @run-at       document-idle
@@ -24,15 +24,21 @@
         },
         endpoints: { list: 'https://admin.faithfulcompanion.com/job/list', details: '/job/details/', updateStatus: 'https://admin.faithfulcompanion.com/job/updateStatus', print: 'https://admin.faithfulcompanion.com/job/print-details/' },
         formatters: {
-            // ADD SPECIFIC CLINIC ABBREVIATION OVERRIDES HERE
+            acronyms: ['AAE', 'OVRS', 'ARAR', 'GLPE', 'VES', 'VEC', 'AGAR'],
             clinics: {
                 'WILSON VETERINARY HOSPITAL': 'Wilson Vet Hosp.',
                 'WAVERLY ANIMAL HOSPITAL': 'Waverly Vet Hosp.',
                 'A REJOYCEFUL ANIMAL RESCUE': 'ARAR'
+            },
+            clinicMap: {
+                "4 Paws Urgent Care": "4 PAWS UC", "9 Tel Animal Hospital": "9 TEL", "Adrian Animal Clinic": "ADRIAN", "Advanced Animal Emergency": "AAE", "Advanced PetCare of Oakland": "APCO", "Advanced Veterinary Care Group": "AVCG", "Advanced Veterinary Medical Center": "AVMC", "Affiliated Veterinary Emergency Services": "AVES", "Affordable Veterinary Care Center": "AVCC", "Airport Veterinary Hospital": "AIRPORT", "AlfaVet Animal Hospital": "ALFA", "All Creatures Animal Clinic": "ALL CREATURES", "Almont-Dryden Veterinary Clinic": "ALMONT", "Alsager Animal Care Center": "AACC", "Amazing Grace Animal Rescue": "AGAR", "Anchor Bay Veterinary Center": "ABVC", "Angel Paws At Home Dr. Karagosian": "ANG PAWS", "Animal Alley Veterinary Hospital": "ALLEY", "Animal Cancer & Imaging Center": "ACIC", "Animal Friends Veterinary Hospital": "AFVH", "Animal Health Care North Branch": "AHC-NB", "Animal Health Clinic": "AHC-F", "Animal Hospital Maple Orchard": "AHMO", "Animal Hospital of Chesterfield": "AHOC", "Animal Hospital of Flint": "AHOF", "Animal Hospital of Vandercook Lake": "AHVL", "Animal Kingdom Veterinary Hospital": "AKVH", "Animal Medical Center of Troy": "AMC-T", "Animal Medical Center of Van Buren": "AMC-VB", "Animal Surgical Center of Michigan": "ASC", "Animal Urgent Center": "AUC", "Animal Wellness & Medical Center of Oxford": "AWMC OXFORD", "Animal Wellness Center of Troy": "AWC - T", "Ann Arbor Animal Hospital": "AAAH", "Ann Arbor Mobile Vet Dr. Staebler": "AAMV", "Arbor Hills Animal Clinic": "ARBOR HILLS-AA", "Arbor Hills Veterinary Clinic": "ARBOR HILLS-JACKSON", "Arborview Veterinary Clinic": "ARBORVIEW", "Ark Animal Clinic": "ARK-N", "Ark Veterinary Hospital": "ARK", "Auburn Animal Hospital": "AUBURN", "Bad Axe Animal Medical Clinic": "BAD AXE", "Bancroft Veterinary Clinic": "BANCROFT", "Banfield Pet Hospital - Ann Arbor #0695": "BAN-AA", "Banfield Pet Hospital - Brighton #0701": "BAN-BRI", "Banfield Pet Hospital - Chesterfield #0700": "BAN-C", "Banfield Pet Hospital - Lansing #0725": "BAN-LAN", "Banfield Pet Hospital - Livonia #1050": "BAN-LIV", "Banfield Pet Hospital - Northville #0688": "BAN-NV", "Banfield Pet Hospital - Okemos #0724": "BAN-OK", "Banfield Pet Hospital - Rochester Rd #0694": "BAN-ROCH", "Banfield Pet Hospital - Roseville #0685": "BAN-ROSE", "Banfield Pet Hospital - Rossford #1433": "BAN-ROSS", "Banfield Pet Hospital - Southfield Telegraph #5359": "BAN-SF", "Banfield Pet Hospital - Spring Meadows #1434": "BAN-HOL", "Banfield Pet Hospital - Troy #5278": "BAN-TROY", "Banfield Pet Hospital - Utica #0687": "BAN-UTICA", "Banfield Pet Hospital - Woodhaven #1638": "BAN-WOOD", "Baylis Animal Hospital": "BAYLIS", "BC Veterinary Home Care Dr. Barbara Corn": "BCVET", "Bell Veterinary Clinic - Metamora": "BELL-M", "Berkley Animal Clinic": "BAC", "Best Friends Veterinary Hospital": "BFVH", "Bloomfield Animal Hospital": "BAH", "Blue Cross Animal Hospital": "BLUE CROSS", "Breckenridge Veterinary": "BRECK", "Briarpointe Veterinary Clinic": "BRIARPOINTE", "Brookeside Veterinary Hospital": "BROOKSIDE", "Brooklyn Road Veterinary Clinic": "BROOKLYN RD", "Canton Center Animal Hospital": "CCAH", "Caprine & Ewe Veterinary Consulting Dr. Melissa Holahan": "CAPRINE", "Caseville Small Animal Clinic": "CSAC", "Centerline Veterinary Hospital": "CLVH", "Cherry Hill Animal Clinic": "CHAC", "Clarkston Animal Medical Center": "CAMC", "Clio Animal Hospital": "CLIO", "Cobblestone Vet Hospital": "COBBLESTONE", "CodaPet In-Home Euthanasia Dr. Emily Yavaraski": "CODA", "Cole Veterinary Hospital": "COLE", "Colonial Veterinary Clinic": "COLONIAL", "Commerce Animal Hospital": "COMM AH", "Commerce Village Veterinary Hospital": "COMM VILL", "Companion Animal Care Clinic": "CACC", "Companion Animal Hospital": "CAH", "Compassionate Care Animal Hospital": "COMP CARE", "Country Garden Veterinary Clinic": "CGVC", "Creekside Animal Hospital": "CREEKSIDE", "Cross Veterinary Clinic": "CROSS", "Crossroads Animal Hospital & Pet Resort": "CAHPR", "Crossroads Veterinary Hospice Dr. Ellen & Dr. Kender": "CRVH", "Crossroads Veterinary Hospice Dr. Mitchell": "CRVH", "D'Adamo Veterinary Hospital": "D'ADAMO", "Davison Veterinary Integrated Care": "DAVISON", "Dearborn Family Pet Care": "DFPC", "DePorre Veterinary Hospital": "DEPORRE", "Dixboro Veterinary Dental": "DIXBORO", "Dixie Veterinary Hospital": "DIXIE", "Doctor Paws Veterinary Hospital": "DOC PAWS", "Downtown Birmingham Veterinary Clinic": "DTWN BIRM", "Dr. Fitz's Bayside Animal Clinic": "BAYSIDE", "Dr. Jayne’s Veterinary Van Dr. Jayne": "JAYNE", "Dr. Osborne Veterinary Home Care Services Dr. Elena Osborne": "OSBORNE", "Dunckel Veterinary Hospital": "DUNCKEL", "Dundee Veterinary Clinic": "DUNDEE", "East Detroit Animal Hospital": "EDAH", "Eastside Veterinary Hospital": "EASTSIDE", "Emergency Veterinary Hospital": "EVHAA", "Faithful Friends Veterinary Care": "FFVC", "Family Paws Veterinary": "FAM PAWS", "Family Pet Practice": "FPP-W", "Five Mile Animal Hospital": "5 MILE", "Flushing Animal Hospital": "FLUSHING", "Ford Caputo Animal Hospital": "FORD-CAPUTO", "Four Paws Veterinary Wellness Dr. Monica Turenne": "4 PAWS", "Four Seasons Veterinary Services": "FSVH", "Fowlerville Veterinary Clinic": "FOWLER", "Fox Run Animal Hospital": "FRAH", "Frankenmuth-Birch Run Veterinary Hospital": "FBR", "Gasow Veterinary Hospital": "GASOW", "Gibraltar Veterinary Hospital": "GVH", "Goodison Veterinary Center": "GOODISON", "Grand Blanc Veterinary Hospital": "GBVH", "Great Lakes Pet Emergencies": "GLPE", "Greater Lansing Veterinary Center": "GLVC", "Great Oaks Veterinary Clinic": "GOVC", "Griffith Veterinary Hospital": "GRIF", "Hamilton Animal Hospital": "HAMILTON", "Hartrick Veterinary Clinic": "HART", "Harvey Animal Hospital": "HARVEY", "Haslett Animal Hospital": "HASLETT", "Healthy Paws Veterinary Care Center - Livonia": "HPAWS - L", "Healthy Paws Veterinary Hospital - Belleville": "HPAWS - B", "Healthy Paws Veterinary Medical Center - Westland": "HPAWS - W", "Heartstrings Pet Hospice Dr. Heidi Christopher": "HPH-OH", "Heartstrings Pet Hospice Dr. Sarah Hammar Dr. Barbara Daniels": "HPH-FARM", "Heritage Veterinary Hospital": "HERITAGE", "Hidden Spring Veterinary Clinic": "HSVC", "Highland Veterinary Clinic": "HIGHLAND", "Hilton Veterinary Clinic": "HILTON", "Hollow Corners Veterinary Services": "HCVS", "Home Care Veterinary Services Dr. Barlas": "HCVS", "Home Vet Dr. Szwarcman": "HOME VET", "HVC Animal Medical & Surgical Center": "HVC", "Imlay City Veterinary Clinic": "ICVC", "In-Home Veterinary Euthanasia Service - (IVES) Dr. Fish": "IVES", "Jefferson Veterinary Center": "JEFFERSON", "Kibby Park Animal Hospital": "KIBBY", "Kimball Animal Hospital": "KIMBALL", "Kind Farewell Dr. Doreen Cawley": "KIND", "KMP Farm Vets": "KMP", "LaFond Veterinary Hospital": "LAFOND", "Lake Huron Veterinary Clinic": "LHVH", "Lake Orion Veterinary Hospital": "LOVH", "Lakeland Veterinary Dr. Kraut Dr. Spletzer": "LAKELAND", "Lakeville Animal Clinic": "LAKEVILLE", "Lane Animal Hospital": "LANE", "Lap of Love - Dr. Amy": "LOL - AMY", "Lap of Love - Dr. Ashley": "LOL - Ashley", "Lap of Love - Dr. Comstock": "LOL - COMSTOCK", "Lap of Love - Dr. Courtney": "LOL - COURTNEY", "Lap of Love - Dr. Emily": "LOL - EMILY", "Lap of Love - Dr. Hanna": "LOL - HANNA", "Lap of Love - Dr. Kristin": "LOL - KRISTIN", "Lap of Love - Dr. Laura": "LOL - Laura P.", "Lap of Love - Dr. Sarah (Toledo)": "LOL - Sarah", "Lap of Love - Dr. Stacii": "LOL - Stacii", "Legacy Pet Care formerly Dr. Hermann Mobile": "HERMANN", "Levan Road Veterinary Hospital": "LEVAN ROAD", "Lincoln Park Veterinary Hospital": "LINC", "Lisner Animal Hospital": "LISNER", "Little Friends of Ferndale": "LFOF", "Livonia Veterinary Hospital": "LVH", "Long Lake Animal Hospital": "LLAH", "Lyon Veterinary Clinic": "LYON", "M-20 Animal Hospital": "M20", "Mackinaw Veterinary Associates": "MACKINAW", "Macomb Center Veterinary Hospital": "MCVH", "Madison Veterinary Hospital": "MADISON", "Manchester Veterinary Clinic": "MANCHESTER", "Maple Veterinary Hospital": "MAPLE", "Matero Veterinary Services": "MATERO", "Meadowbrook Veterinary Clinic": "MEADOW", "MedVet Commerce": "MEDVET", "MedVet Toledo": "MEDVET TOL", "Metropolitan Veterinary Center": "METRO", "Milford Veterinary Clinic": "MILFORD", "Miller Animal Clinic": "MILLER", "MiVet Animal Clinic": "MIVET", "Morrison Animal Hospital": "MORRISON", "Natural Healing Pet Care": "NHPC", "Nichols Veterinary Clinic": "NICHOLS", "Northern Animal Clinic": "NORTHERN", "North Hills Animal Hospital": "N. HILLS", "North Main Animal Hospital": "NMAH", "Nucci Veterinary Clinic": "NUCCI", "Oakland Animal Hospital": "OAH", "Oakland Hills Veterinary Hospital": "OAK HILLS", "Oakland Veterinary Referral Services": "OVRS", "Orchard Lake Animal Hospital": "OLAH", "Orion Oaks Animal Hospital": "OOAH", "Paint Creek Animal Clinic": "PAINT", "Parker Veterinary Hospital": "PARKER", "Parkway Animal Clinic Ann Arbor": "PARKWAY-AA", "Parkway Small Animal & Exotic Hospital": "PSAEH", "Parkway Veterinary Clinic - Plymouth": "PARK-PLY", "Patterson Dog & Cat Hospital": "PATTERSON", "Peaceful Promise Veterinary Hospice Dr. Cate Szurek": "PPVH", "Pet Alliance In-Home Veterinary Services": "PET ALLIANCE", "PetLove Dentistry & Oral Surgery": "PETLOVE", "Plaza Veterinary Hospital": "PLAZA", "Plymouth Veterinary Hospital": "PLYMOUTH", "Pointe Animal Hospital": "POINTE", "Poppy Hill Vet": "POPPY", "Reliance Animal Hospital": "RELIANCE", "River Rock Animal Hospital": "RRAH", "Roadside Veterinary Clinic": "RVC", "Rochester Veterinary Hospital": "ROCH", "Romeo Veterinary Hospital": "ROMEO", "Roose Animal Hospital": "ROOSE", "Ross Hospital for Animals": "ROSS", "Royal Oak Animal Hospital": "ROAH", "Serenity Animal Hospital": "SERENITY", "Sheehy Animal Hospital": "SHEEHY", "Shelby Veterinary Hospital": "SHELBY", "Snyder Veterinary Clinic": "SNYD", "Somerset Veterinary Hospital": "SOMERSET", "South Arbor Animal Hospital": "SAAH", "South Lyon Animal Clinic": "SLAC",
+                "Southpointe Veterinary Hospital": "SPVH", "Spartan Veterinary Clinic": "SPARTAN", "Stadium Veterinary Services": "STADIUM", "Strong Village Veterinary Center": "STRONG", "Synergy Animal Hospital": "SYNERGY", "Taylor Veterinary Clinic": "TAYLOR", "The Cat Practice": "CAT P", "The Kitty Clinic": "KC", "Thomson Animal Clinic": "THOMSON", "Timberstone Vet": "TIMB", "Town Center Veterinary Associates": "TCVA", "Towne & Country Animal Hospital": "TOWN & COUNTRY", "Trenton Veterinary Hospital": "TVH", "Troy & Heights Animal Hospital": "THAH", "Uptown Veterinary Clinic": "UPTOWN", "Valkyrie Vets Dr. Naomi Fleischmann": "VALKYRIE", "Veterinary Cardiology Consultants - Novi": "VCC", "Veterinary Cardiology Consultants - Rochester": "VCC-R", "Veterinary Care Center of Richmond": "HVCC", "Veterinary Care Specialist": "VCS", "Veterinary Emergency Center": "VEC", "Veterinary Emergency Services - West": "VES-W", "Veterinary Health Center": "VHC", "Veterinary House Calls of West Bloomfield Dr. Andrea Switch": "VHCWB", "Veterinary Urgent Care": "VUC", "Vet On The Run Dr. Burkhart": "VOTR", "Vets2U Dr. Justina Supria": "VETS2U", "VetSelect Animal Hospital of Commerce Twp": "VETSC", "VetSelect Animal Hospital of Dearborn": "VETSD", "VetSelect Animal Hospital of Novi": "VETSN", "Walled Lake Veterinary Hospital": "WLVH", "Warren Animal Clinic": "WAC", "Warren Woods Veterinary Hospital": "WWVH", "Washtenaw Veterinary Hospital": "WASHTENAW", "Waverly Animal Hospital": "WAVERLY", "West Bloomfield Veterinary Hospital": "WBVH", "West Flint Animal Hospital": "WFAH", "Westland Veterinary Hospital": "WESTLAND", "Whittaker Road Animal Clinic": "WRAC", "Whole Life Veterinary Services Dr. Bickel": "WHOLE LIFE", "Williamston Animal Clinic": "WILLIAMSTON", "Willowood Acres Veterinary Clinic": "WILLOW", "Wilson Veterinary Hospital": "WILSON", "Wixom Family Pet Practice": "WFPP", "Woodland Animal Hospital": "WOODLAND", "Wyandotte Animal Hospital": "WYANDOTTE", "A&A Pet Hospital": "AAPH", "Adopt-A-Pet": "ADOPT-A-PET", "All About Animals": "AAA", "Allen Animal Hospital": "ALLEN", "Alpine Animal Hospital": "ALPINE", "Angel Animal Hospital - Farmington Hills": "ANGEL-F", "Angel Animal Hospital - Southgate": "ANGEL-SG", "Animal Advocates Veterinary Hospital": "ADVOCATES", "Animal Care Clinic": "ACC-INK", "Animal Clinic At Oxford Mills": "ACOM", "Animal Clinic East": "ACE", "Animal Clinic of Sterling Heights": "ACoSH", "Animal Emergency Center-Novi": "AEC-N", "Animal Emergency Center-Rochester": "AEC-R", "Animal Emergency Hospital - Flint": "AEH-F", "Animal Medical Center of Lapeer": "ACM-L", "Animal Ready Care Dr. Molina": "ARC", "APAWS Veterinary Hospital": "APAWS", "A-Quality Care Veterinary Hospital": "AQCV", "Arbor Pointe Veterinary Hospital": "APVH", "Ash Veterinary Clinic": "ASH", "Banfield Pet Hospital - Traverse City #0727": "BAN-TC", "Bangor Veterinary Clinic": "BANGOR", "Bay Valley Animal Hospital": "BAY VALLEY", "BetterVet Dr. Jessica Rice & Dr. Bayne": "BETTER VET", "Beverly Hills Veterinary Associates": "BHVA", "Bloom Animal Hospital": "BLOOM", "Blue Paws Animal Hospital": "BLUE PAWS", "BluePearl Veterinary Partners - Ann Arbor": "BPAA", "BluePearl Veterinary Partners - Auburn Hills": "BPAH", "BluePearl Veterinary Partners - Southfield": "BPSF", "Bloomfield Pointe Veterinary Hospital": "BLOOM POINTE", "Brinker Veterinary Hospital": "BRINKER", "Cahill Veterinary Hospital": "CAHILL", "Cameron Medical Center for Animals": "CAMERON", "Care Veterinary Services": "CARE", "Comfort Care Veterinary Services Dr. Zinderman": "DR. Z", "Companion Care Veterinary Hospital": "CCVH", "Dine Veterinary Hospital": "DINE", "Dogwood Veterinary Referral Center": "DOGWOOD", "Dworkis Dog & Cat Hospital": "DWORKIS", "Dr. James Romin": "Romin", "Dr. Terri McCormick": "DR. TERRI", "Eckels": "ECKELS", "Fohey Veterinary Hospital": "FOHEY", "Garden City Veterinary Hospital": "GCVH", "Greenfield Animal Hospital": "GAH", "Healthy Pet Veterinary Hospital": "HEALTHY", "Hilldale Veterinary Hospital": "HILLDALE", "Hometown Veterinary Hospital": "HVH", "Hoover Road Animal Hospital": "HRAH", "I <3 Dogs Rescue and Animal Haven": "I <3 Dogs", "Jeffrey Animal Hospital": "JEFFREY", "Kern Road Veterinary Clinic": "KERN", "Krause Veterinary Clinic": "KRAUSE", "Leader Dogs for the Blind": "LEADER DOGS", "Lilley Veterinary Medical Center": "LVMC", "Mayfair Veterinary Hospital": "MAYFAIR", "Michigan Veterinary Total Health Care": "MVTHC", "Mitten Animal Hospital": "MITTEN", "Monroe SPCA": "MONROE SPCA", "Moore Veterinary Hospital": "MOORE", "Motor City Vet Care Dr. Marcy": "MOTOR CITY", "MSU Veterinary Diagnostic Laboratory": "MSU Diagnostics", "MSU Small Animal Veterinary Medical Center": "MSU", "Nie Family Funeral Home": "NIE", "Northwest Animal Clinic": "NWAC", "Orion Animal Hospital": "ORION", "Oxford Veterinary Hospital": "OXFORD", "Pawsitive Care Affordable Pet Clinic": "PAWSITIVE", "Personalized Veterinary: Behavior & Rehabilitation": "PERSONALIZED", "Pet Care Plus": "PCP", "Pet Urgent Care": "PUC", "Pierson Pet Hospital": "PIERSON", "Plymouth-Beech Animal Hospital": "PLY BEECH", "Pytel Veterinary Clinic": "PYTEL", "Rejoyceful Animal Rescue": "Rejoyceful", "Reed Veterinary Services": "REED", "Reese Veterinary Clinic": "REESE", "Richmond Veterinary Hospital": "RICH", "Riverside Animal Hospital": "RIVERSIDE", "Riverview Animal Hospital": "RIVERVIEW", "Roberts Veterinary Services": "ROBERTS", "Sharp Animal Hospital": "SHARP", "Sheldon Veterinary Hospital": "SHELDON", "Southgate Animal Hospital": "SGATE", "St. Julian's Cat Care": "St. JULIAN", "Thorpe Animal Hospital": "THORPE", "Thumb Veterinary Services": "THUMB", "Towne & Country Animal Hospital Brighton": "TCAH-BRIGHTON", "Towne & Country Animal Hospital Hartland": "TCAH-HARTLAND", "Unleashed Pet Care": "UNLEASHED", "VCA Allen Park Animal Hospital": "VCA-AP", "VCA Brighton Animal Hospital": "VCA-B", "VCA Clinton Twp Animal Hospital": "VCA-CT", "VCA Countryside Animal Hospital of Howell": "VCA-HOWELL", "VCA St. Clair Shores Animal Hospital": "VCA-SCS", "VCA White Lake Animal Hospital": "VCA-WL", "Vetco Total Care": "VETCO/MCLAU", "Veterinary Associates of Port Huron": "VET ASSOCIATES", "Veterinary Medical Center - Howell (Red Barn)": "VMC-H", "VetMED Veterinary Hospital": "VETMED", "Village Animal Healthcare": "VILLAGE", "Wayne Mercy Animal Hospital": "WMAH", "West Warren Veterinary Hospital": "WEST WARREN", "West Woodward Animal Hospital": "WWAH", "Westwood Veterinary Hospital": "WESTWOOD", "Whispering Pines Pet Cemetery": "WPPC", "Woodhaven Animal Hospital": "WOODHAVEN"
             }
         },
+
         defaultSettings: {
             initials: null, soundEnabled: true, rapidAutoPrint: true, commWeightMode: 'size', commSWeight: 10, commMWeight: 35, commLWeight: 70, commSummaryFormat: 'split', commColorCode: true, commPalletCount: 2, commExportFormat: 'combined', xrayEnabled: true, nativePrintEnabled: true, searchDays: 60, maxCombinedWeight: 3000, defaultPosition: 'bottom-right', terminalOpacity: 0.95, audioVolume: 0.1, devMode: false, simulateOffline: false,
+            commSearchDaysNormal: 7, commSearchDaysDeep: 60, enableLocalCache: true,
             positions: { rapid: { top: null, left: null, width: '480px', height: 'auto' }, comm: { top: null, left: null, width: '480px', height: 'auto' }, global: { top: null, left: null, width: '400px', height: 'auto' } },
             shortcuts: { toggleRapid: 'Alt+R', toggleComm: 'Alt+C', focusSearch: 'Alt+F', closeTerminals: 'Escape' }
         }
@@ -74,9 +80,16 @@
     // --- Utility / Helpers ---
     const Utils = {
         stripHtml(html) { const tmp = document.createElement('div'); tmp.innerHTML = html || ''; return tmp.textContent.trim(); },
-        getFilterDateRange() { const d = new Date(), fmt = date => `${('0' + (date.getMonth() + 1)).slice(-2)}/${('0' + date.getDate()).slice(-2)}/${date.getFullYear()}`; const end = fmt(d); d.setDate(d.getDate() - (State.settings.searchDays || 60)); return `${fmt(d)} - ${end}`; },
-        buildDataTablesPayload(searchTerm, isClosed) {
-            const params = new URLSearchParams({ draw: 1, start: 0, length: 20, 'search[value]': searchTerm, 'search[regex]': false, job_filter_order: 0, job_filter_status_id: 0, job_filter_type_id: 0, job_filter_period: this.getFilterDateRange(), show_completed_orders: isClosed.toString(), 'order[0][column]': 4, 'order[0][dir]': 'DESC' });
+        getFilterDateRange(overrideDays) {
+            const d = new Date();
+            const fmt = date => `${('0' + (date.getMonth() + 1)).slice(-2)}/${('0' + date.getDate()).slice(-2)}/${date.getFullYear()}`;
+            const end = fmt(d);
+            const lookback = overrideDays !== undefined ? overrideDays : (State.settings.searchDays || 60);
+            d.setDate(d.getDate() - lookback);
+            return `${fmt(d)} - ${end}`;
+        },
+        buildDataTablesPayload(searchTerm, isClosed, overrideDays) {
+            const params = new URLSearchParams({ draw: 1, start: 0, length: 20, 'search[value]': searchTerm, 'search[regex]': false, job_filter_order: 0, job_filter_status_id: 0, job_filter_type_id: 0, job_filter_period: this.getFilterDateRange(overrideDays), show_completed_orders: isClosed.toString(), 'order[0][column]': 4, 'order[0][dir]': 'DESC' });
             for (let i = 0; i <= 13; i++) { params.append(`columns[${i}][data]`, i); params.append(`columns[${i}][name]`, ''); params.append(`columns[${i}][searchable]`, (i !== 2).toString()); params.append(`columns[${i}][orderable]`, (i !== 2 && i !== 13).toString()); params.append(`columns[${i}][search][value]`, ''); params.append(`columns[${i}][search][regex]`, 'false'); }
             return params.toString();
         },
@@ -85,18 +98,74 @@
                 const btn = document.getElementById(successBtnId); if (btn) { const old = btn.innerText; btn.innerText = 'Copied!'; setTimeout(() => btn.innerText = old, 2000); }
             } catch (err) { alert('Failed to copy. Check permissions.'); }
         },
-        toTitleCase(str) { return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()); },
+        toTitleCase(str) {
+            return str.replace(/\w\S*/g, txt => {
+                const upper = txt.toUpperCase();
+                if (CONFIG.formatters.acronyms.includes(upper)) return upper;
+                if (!/[aeiouy]/i.test(txt)) return upper;
+                return txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase();
+            });
+        },
         formatPet(name) { return this.toTitleCase(name); },
         formatFamily(name) {
+            if (!name) return '';
+
+            const upperInput = name.toUpperCase().trim();
+            const mapValues = Object.values(CONFIG.formatters.clinicMap);
+
+            if (CONFIG.formatters.acronyms.includes(upperInput) || mapValues.includes(upperInput)) {
+                return upperInput;
+            }
+
+            const match = this.suggestClinicAcronym(name);
+            if (match) return match.acronym;
+
             const lower = name.toLowerCase();
-            if (/(rescue|society|animal|fund|county|clinic|hospital)/.test(lower)) return this.toTitleCase(name);
-            const parts = name.trim().split(' '); return this.toTitleCase(parts[parts.length - 1]);
+
+            if (/(clinic|hospital|veterinary|vet)/.test(lower)) return this.formatClinic(name);
+
+            if (/(rescue|society|animal|fund|county|shelter|sanctuary|foundation|league|project|trust|network)/.test(lower)) return this.toTitleCase(name);
+
+            const parts = name.trim().split(' ');
+            return this.toTitleCase(parts[parts.length - 1]);
         },
         formatClinic(name) {
-            const upper = name.toUpperCase().trim();
-            if (CONFIG.formatters.clinics[upper]) return CONFIG.formatters.clinics[upper];
+            if (!name) return '';
+
+            const upperInput = name.toUpperCase().trim();
+            const mapValues = Object.values(CONFIG.formatters.clinicMap);
+
+            if (CONFIG.formatters.acronyms.includes(upperInput) || mapValues.includes(upperInput)) {
+                return upperInput;
+            }
+
+            const match = this.suggestClinicAcronym(name);
+            if (match) return match.acronym;
+
+            if (CONFIG.formatters.clinics && CONFIG.formatters.clinics[upperInput]) return CONFIG.formatters.clinics[upperInput];
             let n = this.toTitleCase(name);
             return n.replace(/Veterinary/g, 'Vet').replace(/Hospital/g, 'Hosp.').replace(/Animal/g, 'Anim.').replace(/Center/g, 'Ctr.');
+        },
+        suggestClinicAcronym(userInput) {
+            if (!userInput) return null;
+            const cleanStr = (str) => {
+                return str.replace(/[.,\-\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+                          .toLowerCase()
+                          .split(/\s+/)
+                          .filter(w => !['veterinary', 'vet', 'animal', 'anim', 'hospital', 'hosp', 'clinic', 'center', 'ctr', 'care', 'services', 'inc', 'llc', 'of'].includes(w))
+                          .join(' ')
+                          .trim();
+            };
+            const inputClean = cleanStr(userInput);
+            if (!inputClean) return null;
+
+            for (const [fullName, acronym] of Object.entries(CONFIG.formatters.clinicMap)) {
+                if (userInput.toUpperCase().trim() === acronym.toUpperCase()) return null;
+                if (cleanStr(fullName) === inputClean) {
+                    return { original: fullName, acronym: acronym };
+                }
+            }
+            return null;
         }
     };
 
@@ -120,15 +189,13 @@
 
     // --- API Service ---
     const API = {
-        async searchJobs(searchTerm, primaryStatus, secondaryStatus) {
-            let p1 = Utils.buildDataTablesPayload(searchTerm, primaryStatus);
-            let res1 = await fetch(CONFIG.endpoints.list, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "X-Requested-With": "XMLHttpRequest" }, body: p1 });
-            let data1 = await res1.json(); let rows = data1.data || [];
-            if (rows.length === 0) {
-                let p2 = Utils.buildDataTablesPayload(searchTerm, secondaryStatus);
-                let res2 = await fetch(CONFIG.endpoints.list, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "X-Requested-With": "XMLHttpRequest" }, body: p2 });
-                let data2 = await res2.json(); rows = data2.data || [];
-            }
+        async searchJobs(searchTerm, isClosed = 1, overrideDays = undefined) {
+            const payload = Utils.buildDataTablesPayload(searchTerm, isClosed, overrideDays);
+
+            const res = await fetch(CONFIG.endpoints.list, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "X-Requested-With": "XMLHttpRequest" }, body: payload });
+            const data = await res.json();
+            const rows = data.data || [];
+
             const unique = [], seen = new Set();
             rows.forEach(r => {
                 const match = r[0].match(/\/job\/details\/(\d+)/);
@@ -182,6 +249,12 @@
                         <div class="fc-setting-row"><label style="color:#ffb800;">Native UI Print Button:</label><input type="checkbox" id="global-set-nativeprint"></div>
                         <div class="fc-setting-row"><label style="color:#ffb800;">Enable X-Ray Vision:</label><input type="checkbox" id="global-set-xray"></div>
                         <div class="fc-setting-row"><label style="color:#ffb800;">Simulate Offline Mode:</label><input type="checkbox" id="global-set-offline"></div>
+
+                        <div class="fc-setting-row" style="margin-top: 10px;"><label style="color:#ffb800;">Normal Scan (Days):</label><input type="number" id="global-set-comm-normal" class="fc-setting-input" style="width:60px;"></div>
+                        <div class="fc-setting-row"><label style="color:#ffb800;">Deep Scan (Days):</label><input type="number" id="global-set-comm-deep" class="fc-setting-input" style="width:60px;"></div>
+                        <div class="fc-setting-row"><label style="color:#ffb800;">Enable Local Cache Check:</label><input type="checkbox" id="global-set-cache"></div>
+
+                        <div class="fc-setting-row" style="border-top: 1px solid #444; padding-top: 12px; margin-top: 10px;"><button id="global-dev-migrate" class="fc-action-btn-copy" style="width:100%; background:#e74c3c; color:#fff;" title="Force all current logs through the latest auto-formatter and fuzzy matcher">Migrate Legacy Logs</button></div>
                     </div>
                     <div class="fc-btn-row" style="margin-top: 15px;"><button id="global-shortcuts-btn" class="fc-action-btn" style="background:#5dade2; color:#fff;">Keyboard Shortcuts</button></div>
                     <div class="fc-btn-row" style="margin-top: 5px;"><button id="global-settings-save" class="fc-action-btn" style="background:#2ecc71; color:#000;">Save Settings</button><button id="global-settings-cancel" class="fc-action-btn-clear" style="background:#5a5a5a;">Cancel</button></div>
@@ -199,14 +272,14 @@
 
             <div id="rapid-term" class="fc-term-panel"><div class="fc-term-header"><h3 title="Communal Check-In">Communal Check-In</h3><div class="fc-header-controls"><div class="fc-help-wrapper"><button class="fc-icon-btn" style="cursor:help;">ℹ️</button><div class="fc-help-tooltip"><strong>Keepsake Codes:</strong><b>CP</b> = Clay Paw<br><b>IP</b> = Ink Paw<br><b>IN</b> = Ink Nose<br><b>FC</b> = Fur Clip<br><b>PH</b> = Photo</div></div><button id="rapid-manual-btn" class="fc-icon-btn" title="Add FC Form">➕</button><button id="rapid-settings-btn" class="fc-icon-btn" title="Settings">⚙️</button><button id="rapid-reset-btn" class="fc-icon-btn" title="Reset Position" style="font-size:18px;">⟲</button><button id="rapid-minimize-btn" class="fc-icon-btn" title="Minimize">—</button></div></div>
             <div id="rapid-settings-view" class="fc-sub-view"><div class="fc-setting-row"><label>Auto-Print Keepsakes:</label><input type="checkbox" id="rapid-set-print"></div><div class="fc-btn-row" style="margin-top: 15px;"><button id="rapid-settings-save" class="fc-action-btn">Save</button><button id="rapid-settings-cancel" class="fc-action-btn-clear" style="background:#5a5a5a;">Cancel</button></div></div>
-            <div id="rapid-manual-view" class="fc-sub-view"><h4 style="margin: 0 0 12px 0; color: #ffd93d; text-align: center; text-transform: uppercase; font-size: 14px;">Manual FC Form</h4><div class="fc-manual-row"><label>Pet Name *</label><input type="text" id="rapid-man-pet" class="fc-manual-input" autocomplete="off"></div><div class="fc-manual-row"><label>Family Name</label><input type="text" id="rapid-man-fam" class="fc-manual-input" autocomplete="off"></div><div class="fc-manual-row"><label>Clinic Name</label><input type="text" id="rapid-man-clin" class="fc-manual-input" autocomplete="off"></div><div class="fc-manual-row"><label>Keepsakes (Blank for none)</label><input type="text" id="rapid-man-keep" class="fc-manual-input" placeholder="e.g. CP, IP" autocomplete="off"></div><div class="fc-btn-row" style="margin-top: 15px;"><button id="rapid-man-submit" class="fc-action-btn">Add to Log</button><button id="rapid-man-cancel" class="fc-action-btn-clear" style="background:#5a5a5a;">Cancel</button></div></div>
-            <div id="rapid-edit-view" class="fc-sub-view"><h4 style="margin: 0 0 12px 0; color: #3498db; text-align: center; text-transform: uppercase; font-size: 14px;">Edit Record</h4><input type="hidden" id="rapid-edit-index"><div class="fc-manual-row"><label>Pet Name</label><input type="text" id="rapid-edit-pet" class="fc-manual-input"></div><div class="fc-manual-row"><label>Family Name</label><input type="text" id="rapid-edit-fam" class="fc-manual-input"></div><div class="fc-manual-row"><label>Clinic Name</label><input type="text" id="rapid-edit-clin" class="fc-manual-input"></div><div class="fc-manual-row"><label>Keepsakes</label><input type="text" id="rapid-edit-keep" class="fc-manual-input"></div><div class="fc-btn-row" style="margin-top: 15px;"><button id="rapid-edit-save" class="fc-action-btn">Save Changes</button><button id="rapid-edit-cancel" class="fc-action-btn-clear" style="background:#5a5a5a;">Cancel</button></div></div>
+            <div id="rapid-manual-view" class="fc-sub-view"><h4 style="margin: 0 0 12px 0; color: #ffd93d; text-align: center; text-transform: uppercase; font-size: 14px;">Manual FC Form</h4><div class="fc-manual-row"><label>Pet Name *</label><input type="text" id="rapid-man-pet" class="fc-manual-input" autocomplete="off"></div><div class="fc-manual-row"><label>Family Name</label><input type="text" id="rapid-man-fam" class="fc-manual-input" autocomplete="off"></div><div class="fc-manual-row"><label>Clinic Name</label><input type="text" id="rapid-man-clin" class="fc-manual-input" autocomplete="off"></div><div class="fc-manual-row"><label>Keepsakes (Blank for none)</label><input type="text" id="rapid-man-keep" class="fc-manual-input" placeholder="e.g. CP, IP" autocomplete="off"></div><div id="rapid-man-acr-prompt" class="fc-confirm-box" style="display:none; margin-top:15px;"></div><div class="fc-btn-row" style="margin-top: 15px;"><button id="rapid-man-submit" class="fc-action-btn">Add to Log</button><button id="rapid-man-cancel" class="fc-action-btn-clear" style="background:#5a5a5a;">Cancel</button></div></div>
+            <div id="rapid-edit-view" class="fc-sub-view"><h4 style="margin: 0 0 12px 0; color: #3498db; text-align: center; text-transform: uppercase; font-size: 14px;">Edit Record</h4><input type="hidden" id="rapid-edit-index"><div class="fc-manual-row"><label>Pet Name</label><input type="text" id="rapid-edit-pet" class="fc-manual-input"></div><div class="fc-manual-row"><label>Family Name</label><input type="text" id="rapid-edit-fam" class="fc-manual-input"></div><div class="fc-manual-row"><label>Clinic Name</label><input type="text" id="rapid-edit-clin" class="fc-manual-input"></div><div class="fc-manual-row"><label>Keepsakes</label><input type="text" id="rapid-edit-keep" class="fc-manual-input"></div><div id="rapid-edit-acr-prompt" class="fc-confirm-box" style="display:none; margin-top:15px;"></div><div class="fc-btn-row" style="margin-top: 15px;"><button id="rapid-edit-save" class="fc-action-btn">Save Changes</button><button id="rapid-edit-cancel" class="fc-action-btn-clear" style="background:#5a5a5a;">Cancel</button></div></div>
             <div id="rapid-main-view"><div class="fc-input-row"><input type="text" id="rapid-input" class="fc-main-input" placeholder="Enter Request ID, Pet, or Clinic..." autocomplete="off"></div><div id="rapid-status" class="fc-status-text">Ready.</div><div id="rapid-confirm-box" class="fc-confirm-box"></div><div id="rapid-tiebreaker-list" class="fc-tiebreaker-list"></div><div id="rapid-log-container" class="fc-log-container"></div><div class="fc-btn-row"><button id="rapid-print-btn" class="fc-action-btn" title="Open formatted log">View / Print</button><button id="rapid-copy-btn" class="fc-action-btn-copy" title="Copy Word table">Copy</button><button id="rapid-clear-btn" class="fc-action-btn-clear" title="Clear All">Clear</button></div></div></div>
 
             <div id="comm-term" class="fc-term-panel"><div class="fc-term-header"><h3>Communal Cremation</h3><div class="fc-header-controls"><button id="comm-manual-btn" class="fc-icon-btn" title="Add Special Entry">➕</button><button id="comm-settings-btn" class="fc-icon-btn" title="Settings">⚙️</button><button id="comm-reset-btn" class="fc-icon-btn" title="Reset Position" style="font-size:18px;">⟲</button><button id="comm-minimize-btn" class="fc-icon-btn" title="Minimize">—</button></div></div>
             <div id="comm-settings-view" class="fc-sub-view"><div class="fc-setting-row"><label>Summary Format:</label><select id="comm-set-summary" class="fc-setting-input" style="width:120px;"><option value="split">Split</option><option value="combined">Combined</option></select></div><div class="fc-setting-row"><label>Export Format:</label><select id="comm-set-export" class="fc-setting-input" style="width:120px;"><option value="combined">Combined</option><option value="separate">By Pallet</option></select></div><div class="fc-setting-row"><label>Color Code Logs:</label><input type="checkbox" id="comm-set-color"></div><div class="fc-setting-row"><label>Number of Pallets:</label><input type="number" id="comm-set-pallets" class="fc-setting-input" style="width:50px;" min="1" max="4"></div><div class="fc-setting-row" style="border-top: 1px solid #444; padding-top: 12px;"><label>Weight Mode:</label><select id="comm-set-wmode" class="fc-setting-input" style="width:120px;"><option value="size">DB Size</option><option value="numeric">Numeric</option></select></div><div class="fc-setting-row"><label>Est. Weights (lbs):</label><div><span style="color:#888;">S</span><input type="number" id="comm-set-sw" class="fc-weight-setup-input"><span style="color:#888;">M</span><input type="number" id="comm-set-mw" class="fc-weight-setup-input"><span style="color:#888;">L</span><input type="number" id="comm-set-lw" class="fc-weight-setup-input" style="margin-right:0;"></div></div><div class="fc-setting-row" style="border-top: 1px solid #444; padding-top: 12px;"><label>Max Combined Wt (lbs):</label><input type="number" id="comm-set-maxwt" class="fc-setting-input" style="width:60px;"></div><div class="fc-btn-row" style="margin-top: 15px;"><button id="comm-settings-save" class="fc-action-btn">Save</button><button id="comm-settings-cancel" class="fc-action-btn-clear" style="background:#5a5a5a;">Cancel</button></div></div>
-            <div id="comm-manual-view" class="fc-sub-view"><h4 style="margin: 0 0 12px 0; color: #3498db; text-align: center; text-transform: uppercase; font-size: 14px;">Special Entry</h4><div class="fc-toggle-group" style="margin-bottom: 15px;"><button id="comm-type-fc" class="fc-toggle-btn active">FC Form</button><button id="comm-type-stray" class="fc-toggle-btn">Stray/Wildlife</button></div><div class="fc-manual-row"><label>Pet Name *</label><input type="text" id="comm-man-pet" class="fc-manual-input" autocomplete="off"></div><div class="fc-manual-row"><label>Family Name</label><input type="text" id="comm-man-fam" class="fc-manual-input" autocomplete="off"></div><div class="fc-manual-row"><label>Clinic Name</label><input type="text" id="comm-man-clin" class="fc-manual-input" autocomplete="off"></div><div class="fc-manual-row"><label>Size *</label><select id="comm-man-size" class="fc-manual-input" style="padding: 7px;"><option value="Small">Small</option><option value="Medium">Medium</option><option value="Large">Large</option></select></div><div class="fc-manual-row"><label>Keepsakes (Blank for none)</label><input type="text" id="comm-man-keep" class="fc-manual-input" placeholder="e.g. CP, IP" autocomplete="off"></div><div class="fc-btn-row" style="margin-top: 15px;"><button id="comm-man-submit" class="fc-action-btn">Log to Pallet <span id="comm-man-pal-lbl">1</span></button><button id="comm-man-cancel" class="fc-action-btn-clear" style="background:#5a5a5a;">Cancel</button></div></div>
-            <div id="comm-edit-view" class="fc-sub-view"><h4 style="margin: 0 0 12px 0; color: #3498db; text-align: center; text-transform: uppercase; font-size: 14px;">Edit Record</h4><input type="hidden" id="comm-edit-index"><div class="fc-manual-row"><label>Pet Name</label><input type="text" id="comm-edit-pet" class="fc-manual-input"></div><div class="fc-manual-row"><label>Family Name</label><input type="text" id="comm-edit-fam" class="fc-manual-input"></div><div class="fc-manual-row"><label>Clinic Name</label><input type="text" id="comm-edit-clin" class="fc-manual-input"></div><div class="fc-manual-row"><label>Size</label><select id="comm-edit-size" class="fc-manual-input" style="padding: 7px;"><option value="Small">Small</option><option value="Medium">Medium</option><option value="Large">Large</option></select></div><div class="fc-manual-row"><label>Keepsakes</label><input type="text" id="comm-edit-keep" class="fc-manual-input"></div><div class="fc-manual-row" id="comm-edit-weight-row"><label>Weight (lbs)</label><input type="number" id="comm-edit-weight" class="fc-manual-input"></div><div class="fc-btn-row" style="margin-top: 15px;"><button id="comm-edit-save" class="fc-action-btn">Save Changes</button><button id="comm-edit-cancel" class="fc-action-btn-clear" style="background:#5a5a5a;">Cancel</button></div></div>
+            <div id="comm-manual-view" class="fc-sub-view"><h4 style="margin: 0 0 12px 0; color: #3498db; text-align: center; text-transform: uppercase; font-size: 14px;">Special Entry</h4><div class="fc-toggle-group" style="margin-bottom: 15px;"><button id="comm-type-fc" class="fc-toggle-btn active">FC Form</button><button id="comm-type-stray" class="fc-toggle-btn">Stray/Wildlife</button></div><div class="fc-manual-row"><label>Pet Name *</label><input type="text" id="comm-man-pet" class="fc-manual-input" autocomplete="off"></div><div class="fc-manual-row"><label>Family Name</label><input type="text" id="comm-man-fam" class="fc-manual-input" autocomplete="off"></div><div class="fc-manual-row"><label>Clinic Name</label><input type="text" id="comm-man-clin" class="fc-manual-input" autocomplete="off"></div><div class="fc-manual-row"><label>Size *</label><select id="comm-man-size" class="fc-manual-input" style="padding: 7px;"><option value="Small">Small</option><option value="Medium">Medium</option><option value="Large">Large</option></select></div><div class="fc-manual-row"><label>Keepsakes (Blank for none)</label><input type="text" id="comm-man-keep" class="fc-manual-input" placeholder="e.g. CP, IP" autocomplete="off"></div><div id="comm-man-acr-prompt" class="fc-confirm-box" style="display:none; margin-top:15px;"></div><div class="fc-btn-row" style="margin-top: 15px;"><button id="comm-man-submit" class="fc-action-btn">Log to Pallet <span id="comm-man-pal-lbl">1</span></button><button id="comm-man-cancel" class="fc-action-btn-clear" style="background:#5a5a5a;">Cancel</button></div></div>
+            <div id="comm-edit-view" class="fc-sub-view"><h4 style="margin: 0 0 12px 0; color: #3498db; text-align: center; text-transform: uppercase; font-size: 14px;">Edit Record</h4><input type="hidden" id="comm-edit-index"><div class="fc-manual-row"><label>Pet Name</label><input type="text" id="comm-edit-pet" class="fc-manual-input"></div><div class="fc-manual-row"><label>Family Name</label><input type="text" id="comm-edit-fam" class="fc-manual-input"></div><div class="fc-manual-row"><label>Clinic Name</label><input type="text" id="comm-edit-clin" class="fc-manual-input"></div><div class="fc-manual-row"><label>Size</label><select id="comm-edit-size" class="fc-manual-input" style="padding: 7px;"><option value="Small">Small</option><option value="Medium">Medium</option><option value="Large">Large</option></select></div><div class="fc-manual-row"><label>Keepsakes</label><input type="text" id="comm-edit-keep" class="fc-manual-input"></div><div class="fc-manual-row" id="comm-edit-weight-row"><label>Weight (lbs)</label><input type="number" id="comm-edit-weight" class="fc-manual-input"></div><div id="comm-edit-acr-prompt" class="fc-confirm-box" style="display:none; margin-top:15px;"></div><div class="fc-btn-row" style="margin-top: 15px;"><button id="comm-edit-save" class="fc-action-btn">Save Changes</button><button id="comm-edit-cancel" class="fc-action-btn-clear" style="background:#5a5a5a;">Cancel</button></div></div>
             <div id="comm-main-view"><div class="fc-toggle-row"><div class="fc-toggle-group" id="comm-pallet-group"><button id="comm-pal-1" class="fc-toggle-btn active">Pallet 1</button><button id="comm-pal-2" class="fc-toggle-btn">Pallet 2</button><button id="comm-pal-3" class="fc-toggle-btn" style="display:none;">Pallet 3</button><button id="comm-pal-4" class="fc-toggle-btn" style="display:none;">Pallet 4</button></div></div><div class="fc-capacity-container"><div id="comm-capacity-bar" class="fc-capacity-bar"></div></div><div id="comm-capacity-text" class="fc-capacity-text">0 / 3000 lbs</div><div class="fc-input-row"><input type="text" id="comm-input" class="fc-main-input" placeholder="Enter Request ID, Pet, or Clinic..." autocomplete="off"><input type="number" id="comm-weight" class="fc-weight-input" placeholder="lbs" autocomplete="off"></div><div id="comm-status" class="fc-status-text">Ready.</div><div id="comm-confirm-box" class="fc-confirm-box"></div><div id="comm-tiebreaker-list" class="fc-tiebreaker-list"></div><div id="comm-log-container" class="fc-log-container"></div><div class="fc-btn-row"><button id="comm-print-btn" class="fc-action-btn" title="Open formatted log">View / Print</button><button id="comm-copy-btn" class="fc-action-btn-copy" title="Copy Word table">Copy</button><button id="comm-clear-btn" class="fc-action-btn-clear" title="Clear All">Clear</button></div></div></div>
             `;
             document.body.appendChild(wrapper);
@@ -237,14 +310,14 @@
             const rTerm = getEl('rapid-term'), cTerm = getEl('comm-term'), rToggle = getEl('rapid-toggle-btn'), cToggle = getEl('comm-toggle-btn');
             const closeAll = () => { rTerm.style.display = 'none'; cTerm.style.display = 'none'; rToggle.classList.remove('active'); cToggle.classList.remove('active'); };
 
-            getEl('global-settings-btn').addEventListener('click', () => { closeAll(); this.GlobalSettings.toggleView(); });
+            getEl('global-settings-btn').addEventListener('click', () => { closeAll(); this.GlobalSettings.toggleView('main'); });
             rToggle.addEventListener('click', () => { if (rTerm.style.display === 'block') closeAll(); else { closeAll(); getEl('global-settings-panel').style.display='none'; rTerm.style.display = 'block'; rToggle.classList.add('active'); this.Drag.ensureInBounds(rTerm); this.Rapid.renderLog(); getEl('rapid-input').focus(); } });
             cToggle.addEventListener('click', () => { if (cTerm.style.display === 'block') closeAll(); else { closeAll(); getEl('global-settings-panel').style.display='none'; cTerm.style.display = 'block'; cToggle.classList.add('active'); this.Comm.applySettings(); this.Drag.ensureInBounds(cTerm); this.Comm.renderLog(); getEl('comm-input').focus(); } });
 
             getEl('rapid-minimize-btn').addEventListener('click', closeAll); getEl('comm-minimize-btn').addEventListener('click', closeAll);
 
             getEl('global-export-btn').addEventListener('click', () => {
-                const payload = { version: "13.3", timestamp: new Date().toISOString(), settings: State.settings, rapidLog: State.rapidLog, communalLog: State.commLog, syncQueue: State.syncQueue };
+                const payload = { version: "13.16", timestamp: new Date().toISOString(), settings: State.settings, rapidLog: State.rapidLog, communalLog: State.commLog, syncQueue: State.syncQueue };
                 const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob);
                 const a = document.createElement('a'); a.href = url; a.download = `fc-master-backup_${Date.now()}.json`; a.click(); URL.revokeObjectURL(url);
             });
@@ -306,19 +379,91 @@
             },
             bindEvents() {
                 const el = id => document.getElementById(id);
+                const migrateBtn = el('global-dev-migrate');
+                if (migrateBtn) {
+                    migrateBtn.addEventListener('click', () => {
+                        if (!confirm("This will run all current log entries through the new formatting and acronym rules. Proceed?")) return;
+
+                        let updatedRapid = 0, updatedComm = 0;
+
+                        State.rapidLog = State.rapidLog.map(row => {
+                            const c = row.clinic || '';
+                            const match = Utils.suggestClinicAcronym(c);
+                            updatedRapid++;
+                            return {
+                                ...row,
+                                pet: Utils.formatPet(row.pet || ''),
+                                family: Utils.formatFamily(row.family || ''),
+                                clinic: match ? match.acronym : Utils.formatClinic(c)
+                            };
+                        });
+
+                        State.commLog = State.commLog.map(row => {
+                            const c = row.clinic || '';
+                            const match = Utils.suggestClinicAcronym(c);
+                            updatedComm++;
+                            return {
+                                ...row,
+                                pet: (row.pet === 'Stray/Wildlife') ? row.pet : Utils.formatPet(row.pet || ''),
+                                family: (row.pet === 'Stray/Wildlife') ? '' : Utils.formatFamily(row.family || ''),
+                                clinic: match ? match.acronym : Utils.formatClinic(c)
+                            };
+                        });
+
+                        State.saveRapid();
+                        State.saveComm();
+                        App.Rapid.renderLog();
+                        App.Comm.renderLog();
+                        AudioService.play('success');
+                        alert(`Migration Complete!\nRe-formatted ${updatedRapid} Check-In records and ${updatedComm} Cremation records.`);
+                    });
+                }
+
                 el('global-settings-save').addEventListener('click', () => {
-                    State.settings.initials = el('global-set-initials').value.trim().toUpperCase() || 'CM'; State.settings.soundEnabled = el('global-set-audio').checked; State.settings.audioVolume = parseFloat(el('global-set-volume').value); State.settings.terminalOpacity = parseFloat(el('global-set-opacity').value); State.settings.searchDays = parseInt(el('global-set-days').value) || 60; State.settings.defaultPosition = el('global-set-position').value; State.settings.nativePrintEnabled = el('global-set-nativeprint').checked; State.settings.xrayEnabled = el('global-set-xray').checked; State.settings.simulateOffline = el('global-set-offline').checked;
-                    State.saveSettings(); this.applyOpacity(); App.Drag.applyDefaultCSS(el('rapid-term'), 'rapid'); App.Drag.applyDefaultCSS(el('comm-term'), 'comm'); el('global-settings-panel').style.display = 'none';
+                    State.settings.initials = el('global-set-initials').value.trim().toUpperCase() || null;
+                    State.settings.soundEnabled = el('global-set-audio').checked;
+                    State.settings.terminalOpacity = parseFloat(el('global-set-opacity').value) || 0.95;
+                    State.settings.audioVolume = parseFloat(el('global-set-volume').value) || 0.1;
+
+                    State.settings.searchDays = parseInt(el('global-set-days').value) || 60;
+                    State.settings.nativePrintEnabled = el('global-set-nativeprint').checked;
+                    State.settings.xrayEnabled = el('global-set-xray').checked;
+                    State.settings.simulateOffline = el('global-set-offline').checked;
+
+                    State.settings.commSearchDaysNormal = parseInt(el('global-set-comm-normal').value) || 7;
+                    State.settings.commSearchDaysDeep = parseInt(el('global-set-comm-deep').value) || 60;
+                    State.settings.enableLocalCache = el('global-set-cache').checked;
+
+                    State.saveSettings();
+                    this.applyOpacity();
+                    App.Rapid.applySettings();
+                    App.Comm.applySettings();
+                    el('global-settings-panel').style.display = 'none';
                 });
-                el('global-settings-cancel').addEventListener('click', () => el('global-settings-panel').style.display = 'none');
-                el('global-minimize-btn').addEventListener('click', () => el('global-settings-panel').style.display = 'none');
+
+                el('global-settings-cancel').addEventListener('click', () => { el('global-settings-panel').style.display = 'none'; });
+                el('global-minimize-btn').addEventListener('click', () => { el('global-settings-panel').style.display = 'none'; });
             },
-            toggleView() {
-                const panel = document.getElementById('global-settings-panel');
-                if (panel.style.display === 'block') { panel.style.display = 'none'; } else {
-                    const el = id => document.getElementById(id);
-                    el('global-set-initials').value = State.settings.initials; el('global-set-audio').checked = State.settings.soundEnabled; el('global-set-volume').value = State.settings.audioVolume; el('global-set-opacity').value = State.settings.terminalOpacity; el('global-set-days').value = State.settings.searchDays; el('global-set-position').value = State.settings.defaultPosition || 'bottom-right'; el('global-set-nativeprint').checked = State.settings.nativePrintEnabled; el('global-set-xray').checked = State.settings.xrayEnabled; el('global-set-offline').checked = State.settings.simulateOffline || false;
-                    this.applyDevMode(); document.getElementById('global-settings-main').style.display = 'block'; document.getElementById('shortcuts-view').style.display = 'none'; panel.style.display = 'block';
+            toggleView(view) {
+                const el = id => document.getElementById(id);
+                el('global-settings-panel').style.display = view === 'main' ? 'block' : 'none';
+                if (view === 'main') {
+                    el('global-set-initials').value = State.settings.initials || '';
+                    el('global-set-audio').checked = State.settings.soundEnabled;
+                    el('global-set-opacity').value = State.settings.terminalOpacity || 0.95;
+                    el('global-set-volume').value = State.settings.audioVolume || 0.1;
+
+                    el('global-set-days').value = State.settings.searchDays || 60;
+                    el('global-set-nativeprint').checked = State.settings.nativePrintEnabled;
+                    el('global-set-xray').checked = State.settings.xrayEnabled;
+                    el('global-set-offline').checked = State.settings.simulateOffline;
+
+                    el('global-set-comm-normal').value = State.settings.commSearchDaysNormal || 7;
+                    el('global-set-comm-deep').value = State.settings.commSearchDaysDeep || 60;
+                    el('global-set-cache').checked = State.settings.enableLocalCache !== false;
+
+                    const devContainer = document.getElementById('dev-settings-container');
+                    if (devContainer) devContainer.style.display = (State.settings.devMode || false) ? 'block' : 'none';
                 }
             }
         },
@@ -619,6 +764,9 @@
         Rapid: {
             awaitingConfirm: false, pendingJob: null, getEl: (id) => document.getElementById(id),
             init() { this.bindEvents(); },
+            applySettings() {
+                this.getEl('rapid-set-print').checked = State.settings.rapidAutoPrint;
+            },
             bindEvents() {
                 const el = this.getEl;
                 el('rapid-settings-btn').addEventListener('click', () => this.toggleView('settings'));
@@ -640,36 +788,58 @@
                     State.saveSettings(); this.toggleView('main'); this.setStatus('Settings saved.', 'success');
                 });
 
+                const finalizeManual = (pName, pFam, pClin, kText) => {
+                    State.rapidLog.push({ jobId: `manual-${Date.now()}`, batch: State.rapidLog.length + 1, pet: pName, family: pFam, clinic: pClin, keepsakes: kText, hasKeepsakes: kText !== 'X', initials: State.settings.initials });
+                    State.saveRapid(); this.renderLog(); AudioService.play('success'); this.setStatus(`Success: Manual form for ${pName} added.`, 'success'); this.toggleView('main');
+                    el('rapid-man-acr-prompt').style.display = 'none';
+                };
+
                 const submitManual = () => {
                     const rawPet = el('rapid-man-pet').value.trim();
                     if (!rawPet) { AudioService.play('alert'); const pInput = el('rapid-man-pet'); pInput.classList.remove('fc-shake'); void pInput.offsetWidth; pInput.classList.add('fc-shake'); return pInput.focus(); }
 
-                    // Wrap the raw inputs through the formatters
-                    const pName = Utils.formatPet(rawPet);
-                    const pFam = Utils.formatFamily(el('rapid-man-fam').value.trim());
-                    const pClin = Utils.formatClinic(el('rapid-man-clin').value.trim());
+                    const pName = rawPet;
+                    const pFam = el('rapid-man-fam').value.trim();
+                    const rawClin = el('rapid-man-clin').value.trim();
                     const kText = el('rapid-man-keep').value.trim().toUpperCase() || 'X';
 
-                    State.rapidLog.push({ jobId: `manual-${Date.now()}`, batch: State.rapidLog.length + 1, pet: pName, family: pFam, clinic: pClin, keepsakes: kText, hasKeepsakes: kText !== 'X', initials: State.settings.initials });
-                    State.saveRapid(); this.renderLog(); AudioService.play('success'); this.setStatus(`Success: Manual form for ${pName} added.`, 'success'); this.toggleView('main');
+                    const match = Utils.suggestClinicAcronym(rawClin);
+                    if (match) {
+                        const promptBox = el('rapid-man-acr-prompt');
+                        promptBox.innerHTML = `<div>Clinic Match: <b>${match.original}</b><br>Use acronym <b>${match.acronym}</b>?</div><div class="fc-btn-row" style="margin-top:10px;"><button id="rm-acr-yes" class="fc-action-btn">Yes</button><button id="rm-acr-no" class="fc-action-btn-clear" style="background:#5a5a5a;">No</button></div>`;
+                        promptBox.style.display = 'block';
+                        el('rm-acr-yes').onclick = () => finalizeManual(pName, pFam, match.acronym, kText);
+                        el('rm-acr-no').onclick = () => finalizeManual(pName, pFam, rawClin, kText);
+                    } else {
+                        finalizeManual(pName, pFam, rawClin, kText);
+                    }
                 };
                 el('rapid-man-submit').addEventListener('click', submitManual);
                 ['rapid-man-pet', 'rapid-man-fam', 'rapid-man-clin', 'rapid-man-keep'].forEach(id => { el(id).addEventListener('keypress', e => { if (e.key === 'Enter') submitManual(); }); });
 
+                const finalizeEdit = (idx, row, ePet, eFam, eClin, newKeep) => {
+                    State.rapidLog[idx] = { ...row, pet: ePet || row.pet, family: eFam, clinic: eClin, keepsakes: newKeep || 'X', hasKeepsakes: newKeep !== '' && newKeep !== 'X' };
+                    State.saveRapid(); this.renderLog(); this.toggleView('main'); this.setStatus('Record updated.', 'success');
+                    el('rapid-edit-acr-prompt').style.display = 'none';
+                };
+
                 el('rapid-edit-save').addEventListener('click', () => {
                     const idx = el('rapid-edit-index').value, row = State.rapidLog[idx]; if(!row) return;
+                    const ePet = el('rapid-edit-pet').value.trim();
+                    const eFam = el('rapid-edit-fam').value.trim();
+                    const rawClin = el('rapid-edit-clin').value.trim();
                     const newKeep = el('rapid-edit-keep').value.trim().toUpperCase();
 
-                    // Wrap the edit inputs through the formatters
-                    State.rapidLog[idx] = {
-                        ...row,
-                        pet: Utils.formatPet(el('rapid-edit-pet').value.trim()) || row.pet,
-                        family: Utils.formatFamily(el('rapid-edit-fam').value.trim()),
-                        clinic: Utils.formatClinic(el('rapid-edit-clin').value.trim()),
-                        keepsakes: newKeep || 'X',
-                        hasKeepsakes: newKeep !== '' && newKeep !== 'X'
-                    };
-                    State.saveRapid(); this.renderLog(); this.toggleView('main'); this.setStatus('Record updated.', 'success');
+                    const match = Utils.suggestClinicAcronym(rawClin);
+                    if (match) {
+                        const promptBox = el('rapid-edit-acr-prompt');
+                        promptBox.innerHTML = `<div>Clinic Match: <b>${match.original}</b><br>Use acronym <b>${match.acronym}</b>?</div><div class="fc-btn-row" style="margin-top:10px;"><button id="re-acr-yes" class="fc-action-btn">Yes</button><button id="re-acr-no" class="fc-action-btn-clear" style="background:#5a5a5a;">No</button></div>`;
+                        promptBox.style.display = 'block';
+                        el('re-acr-yes').onclick = () => finalizeEdit(idx, row, ePet, eFam, match.acronym, newKeep);
+                        el('re-acr-no').onclick = () => finalizeEdit(idx, row, ePet, eFam, rawClin, newKeep);
+                    } else {
+                        finalizeEdit(idx, row, ePet, eFam, rawClin, newKeep);
+                    }
                 });
 
                 el('rapid-input').addEventListener('keypress', async e => {
@@ -680,7 +850,7 @@
                     el('rapid-input').value = ''; el('rapid-input').disabled = true; el('rapid-tiebreaker-list').style.display = 'none'; el('rapid-confirm-box').style.display = 'none';
                     this.setStatus(`Searching for "${term}"...`, 'neutral');
                     try {
-                        const matches = await API.searchJobs(term, 0, 1);
+                        const matches = await API.searchJobs(term, 0); // Removed vestigial parameter collision
                         if (matches.length === 0) { this.setStatus(`No exact matches for "${term}".`, 'error'); el('rapid-input').disabled = false; el('rapid-input').focus(); }
                         else if (matches.length === 1) { this.previewJob(matches[0]); }
                         else {
@@ -722,8 +892,10 @@
                     const specNode = doc.querySelector('.job_special_request'); if (specNode && specNode.innerText.trim()!=='') specReq = specNode.innerText.trim();
                     let kList = []; doc.querySelectorAll('.job-detail-items-section .custom-control-description').forEach(n => { let txt = n.innerText.trim().toLowerCase(), code = ''; if(txt.includes('clay paw')) code = 'CP'; else if(txt.includes('ink paw')) code = 'IP'; else if(txt.includes('ink nose')) code = 'IN'; else if(txt.includes('fur clip')||txt.includes('hair clip')) code = 'FC'; else if(txt.includes('photo')) code = 'PH'; else code = txt; let match = txt.match(/\(x(\d+)\)/); if(match && parseInt(match[1])>1 && code.length===2) code = match[1]+code; kList.push(code.toUpperCase()); });
                     const hasK = kList.length > 0; const kText = hasK ? kList.join(', ') : 'X';
+
                     this.pendingJob = { ...data, pet: Utils.formatPet(tPet), family: Utils.formatFamily(tFam), clinic: Utils.formatClinic(tClin), keepsakes: kText, hasKeepsakes: hasK };
-                    this.getEl('rapid-confirm-box').innerHTML = `<div><span class="fc-confirm-label">Type:</span> <span class="fc-confirm-val" style="color:#3498db; font-weight:bold;">${data.type}</span></div><div><span class="fc-confirm-label">Pet:</span> <span class="fc-confirm-val">${this.pendingJob.pet}</span></div><div><span class="fc-confirm-label">Family:</span> <span class="fc-confirm-val">${this.pendingJob.family}</span></div><div><span class="fc-confirm-label">Clinic:</span> <span class="fc-confirm-val">${this.pendingJob.clinic}</span></div><div><span class="fc-confirm-label">Keepsakes:</span> <span class="fc-confirm-val" style="color:${hasK?'#4cd137':'#fff'}; font-weight:bold;">${kText}</span></div><div><span class="fc-confirm-label">Special:</span> <span class="fc-confirm-val" style="color:${specReq!=='None'?'#ff6b6b':'#fff'}; font-weight:bold;">${specReq}</span></div><div class="fc-confirm-warn">Press ENTER to confirm, or ESC to cancel.</div>`;                    this.getEl('rapid-confirm-box').style.display = 'block'; App.Drag.ensureInBounds(this.getEl('rapid-term')); this.setStatus('Awaiting verification...', 'warning'); specReq !== 'None' ? AudioService.play('alert') : AudioService.play('found'); this.awaitingConfirm = true; this.getEl('rapid-input').disabled = false; this.getEl('rapid-input').focus();
+                    this.getEl('rapid-confirm-box').innerHTML = `<div><span class="fc-confirm-label">Type:</span> <span class="fc-confirm-val" style="color:#3498db; font-weight:bold;">${data.type}</span></div><div><span class="fc-confirm-label">Pet:</span> <span class="fc-confirm-val">${this.pendingJob.pet}</span></div><div><span class="fc-confirm-label">Family:</span> <span class="fc-confirm-val">${this.pendingJob.family}</span></div><div><span class="fc-confirm-label">Clinic:</span> <span class="fc-confirm-val">${this.pendingJob.clinic}</span></div><div><span class="fc-confirm-label">Keepsakes:</span> <span class="fc-confirm-val" style="color:${hasK?'#4cd137':'#fff'}; font-weight:bold;">${kText}</span></div><div><span class="fc-confirm-label">Special:</span> <span class="fc-confirm-val" style="color:${specReq!=='None'?'#ff6b6b':'#fff'}; font-weight:bold;">${specReq}</span></div><div class="fc-confirm-warn">Press ENTER to confirm, or ESC to cancel.</div>`;
+                    this.getEl('rapid-confirm-box').style.display = 'block'; App.Drag.ensureInBounds(this.getEl('rapid-term')); this.setStatus('Awaiting verification...', 'warning'); specReq !== 'None' ? AudioService.play('alert') : AudioService.play('found'); this.awaitingConfirm = true; this.getEl('rapid-input').disabled = false; this.getEl('rapid-input').focus();
                 } catch (err) { this.setStatus('Failed to fetch details.', 'error'); this.getEl('rapid-input').disabled = false; this.getEl('rapid-input').focus(); }
             },
 
@@ -870,6 +1042,12 @@
                 el('comm-type-fc').addEventListener('click', () => { el('comm-type-fc').classList.add('active'); el('comm-type-stray').classList.remove('active'); el('comm-man-pet').value = ''; el('comm-man-pet').disabled = false; el('comm-man-fam').value = ''; el('comm-man-fam').disabled = false; el('comm-man-fam').style.opacity = '1'; el('comm-man-pet').focus(); });
                 el('comm-type-stray').addEventListener('click', () => { el('comm-type-stray').classList.add('active'); el('comm-type-fc').classList.remove('active'); el('comm-man-pet').value = 'Stray/Wildlife'; el('comm-man-fam').value = ''; el('comm-man-fam').disabled = true; el('comm-man-fam').style.opacity = '0.4'; el('comm-man-clin').focus(); });
 
+                const finalizeCommManual = (pName, pFam, pClin, kText, numW, sizeVal) => {
+                    State.commLog.push({ jobId: 'manual-' + Date.now(), batch: State.commLog.length + 1, pallet: State.activePallet, size: sizeVal, weightNum: numW, pet: pName, family: pFam, clinic: pClin, keepsakes: kText, hasKeepsakes: kText !== 'X', initials: State.settings.initials });
+                    State.saveComm(); this.renderLog(); AudioService.play('success'); this.setStatus(`Success: Logged ${pName} to Pallet ${State.activePallet}.`, 'success'); el('comm-weight').value = ''; this.toggleView('main');
+                    el('comm-man-acr-prompt').style.display = 'none';
+                };
+
                 const submitManual = () => {
                     const rawPet = el('comm-man-pet').value.trim();
                     const isStray = el('comm-type-stray').classList.contains('active');
@@ -877,37 +1055,144 @@
 
                     let numW = 0; if (State.settings.commWeightMode === 'numeric') { numW = parseFloat(el('comm-weight').value) || 0; if(numW === 0) { alert("Please enter numeric weight in main view first."); this.toggleView('main'); el('comm-weight').focus(); return; } }
 
-                    // Wrap inputs, handling the Stray exception
-                    const pName = isStray && !rawPet ? 'Stray/Wildlife' : Utils.formatPet(rawPet);
-                    const pFam = isStray ? '' : Utils.formatFamily(el('comm-man-fam').value.trim());
-                    const pClin = Utils.formatClinic(el('comm-man-clin').value.trim());
+                    const pName = isStray && !rawPet ? 'Stray/Wildlife' : rawPet;
+                    const pFam = isStray ? '' : el('comm-man-fam').value.trim();
+                    const rawClin = el('comm-man-clin').value.trim();
                     const kText = el('comm-man-keep').value.trim().toUpperCase() || 'X';
+                    const sizeVal = el('comm-man-size').value;
 
-                    State.commLog.push({ jobId: 'manual-' + Date.now(), batch: State.commLog.length + 1, pallet: State.activePallet, size: el('comm-man-size').value, weightNum: numW, pet: pName, family: pFam, clinic: pClin, keepsakes: kText, hasKeepsakes: kText !== 'X', initials: State.settings.initials });
-                    State.saveComm(); this.renderLog(); AudioService.play('success'); this.setStatus(`Success: Logged ${pName} to Pallet ${State.activePallet}.`, 'success'); el('comm-weight').value = ''; this.toggleView('main');
+                    const match = Utils.suggestClinicAcronym(rawClin);
+                    if (match) {
+                        const promptBox = el('comm-man-acr-prompt');
+                        promptBox.innerHTML = `<div>Clinic Match: <b>${match.original}</b><br>Use acronym <b>${match.acronym}</b>?</div><div class="fc-btn-row" style="margin-top:10px;"><button id="cm-acr-yes" class="fc-action-btn">Yes</button><button id="cm-acr-no" class="fc-action-btn-clear" style="background:#5a5a5a;">No</button></div>`;
+                        promptBox.style.display = 'block';
+                        el('cm-acr-yes').onclick = () => finalizeCommManual(pName, pFam, match.acronym, kText, numW, sizeVal);
+                        el('cm-acr-no').onclick = () => finalizeCommManual(pName, pFam, rawClin, kText, numW, sizeVal);
+                    } else {
+                        finalizeCommManual(pName, pFam, rawClin, kText, numW, sizeVal);
+                    }
                 };
                 el('comm-man-submit').addEventListener('click', submitManual); ['comm-man-pet', 'comm-man-fam', 'comm-man-clin', 'comm-man-size', 'comm-man-keep'].forEach(id => { el(id).addEventListener('keypress', e => { if (e.key === 'Enter') submitManual(); }); });
 
+                const finalizeCommEdit = (idx, row, ePet, eFam, eClin, newKeep, newWeight, sizeVal) => {
+                    State.commLog[idx] = { ...row, pet: ePet || row.pet, family: eFam, clinic: eClin, size: sizeVal, weightNum: newWeight, keepsakes: newKeep || 'X', hasKeepsakes: newKeep !== '' && newKeep !== 'X' };
+                    State.saveComm(); this.renderLog(); this.toggleView('main'); this.setStatus('Record updated.', 'success');
+                    el('comm-edit-acr-prompt').style.display = 'none';
+                };
+
                 el('comm-edit-save').addEventListener('click', () => {
                     const idx = el('comm-edit-index').value, row = State.commLog[idx]; if(!row) return;
+                    const ePet = el('comm-edit-pet').value.trim();
+                    const eFam = el('comm-edit-fam').value.trim();
+                    const rawClin = el('comm-edit-clin').value.trim();
                     const newKeep = el('comm-edit-keep').value.trim().toUpperCase();
+                    const sizeVal = el('comm-edit-size').value;
                     let newWeight = row.weightNum; if (State.settings.commWeightMode === 'numeric') { newWeight = parseFloat(el('comm-edit-weight').value) || 0; }
 
-                    // Wrap the edit inputs through the formatters
-                    State.commLog[idx] = {
-                        ...row,
-                        pet: Utils.formatPet(el('comm-edit-pet').value.trim()) || row.pet,
-                        family: Utils.formatFamily(el('comm-edit-fam').value.trim()),
-                        clinic: Utils.formatClinic(el('comm-edit-clin').value.trim()),
-                        size: el('comm-edit-size').value,
-                        weightNum: newWeight,
-                        keepsakes: newKeep || 'X',
-                        hasKeepsakes: newKeep !== '' && newKeep !== 'X'
-                    };
-                    State.saveComm(); this.renderLog(); this.toggleView('main'); this.setStatus('Record updated.', 'success');
+                    const match = Utils.suggestClinicAcronym(rawClin);
+                    if (match) {
+                        const promptBox = el('comm-edit-acr-prompt');
+                        promptBox.innerHTML = `<div>Clinic Match: <b>${match.original}</b><br>Use acronym <b>${match.acronym}</b>?</div><div class="fc-btn-row" style="margin-top:10px;"><button id="ce-acr-yes" class="fc-action-btn">Yes</button><button id="ce-acr-no" class="fc-action-btn-clear" style="background:#5a5a5a;">No</button></div>`;
+                        promptBox.style.display = 'block';
+                        el('ce-acr-yes').onclick = () => finalizeCommEdit(idx, row, ePet, eFam, match.acronym, newKeep, newWeight, sizeVal);
+                        el('ce-acr-no').onclick = () => finalizeCommEdit(idx, row, ePet, eFam, rawClin, newKeep, newWeight, sizeVal);
+                    } else {
+                        finalizeCommEdit(idx, row, ePet, eFam, rawClin, newKeep, newWeight, sizeVal);
+                    }
                 });
+
                 el('comm-weight').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if(el('comm-input').value.trim()!=='') el('comm-input').dispatchEvent(new KeyboardEvent('keypress',{'key':'Enter'})); else el('comm-input').focus(); } });
-                el('comm-input').addEventListener('keypress', async e => { if (e.key !== 'Enter') return; if (this.awaitingConfirm) { e.preventDefault(); await this.executeCheckIn(); return; } const term = el('comm-input').value.trim(); if (!term) return; let numW = 0; if (State.settings.commWeightMode === 'numeric') { numW = parseFloat(el('comm-weight').value) || 0; if(numW===0 && term.toLowerCase()!=='test') { this.setStatus("Enter numeric weight first.", 'warning'); el('comm-weight').focus(); return; } } if (term.toLowerCase() === 'test') { el('comm-input').value = ''; el('comm-weight').value = ''; let testArr = [{p:'Garfield',s:'Large',pal:1},{p:'Snoopy',s:'Medium',pal:1},{p:'Scooby',s:'Large',pal:1},{p:'Tom',s:'Small',pal:2},{p:'Pluto',s:'Medium',pal:2},{p:'Goofy',s:'Large',pal:2}]; if (State.settings.commPalletCount > 2) testArr.push({p:'Porky',s:'Medium',pal:3}); if (State.settings.commPalletCount > 3) testArr.push({p:'Bugs',s:'Small',pal:4}); testArr.forEach((d,i) => { let w = d.s==='Small'?12 : d.s==='Medium'?40 : 85; State.commLog.push({ jobId:'test-'+Date.now()+'-'+i, batch:State.commLog.length+1, pallet:d.pal, size:d.s, weightNum:w, pet:d.p, family:'Fam', clinic:'Vet', keepsakes:'X', hasKeepsakes:false, initials:State.settings.initials }); }); State.saveComm(); this.renderLog(); this.setStatus('Secret: Fake records injected.', 'success'); AudioService.play('success'); return; } el('comm-input').value = ''; el('comm-input').disabled = true; el('comm-tiebreaker-list').style.display = 'none'; el('comm-confirm-box').style.display = 'none'; this.setStatus(`Searching for "${term}"...`, 'neutral'); try { const matches = await API.searchJobs(term, 1, 0); if (matches.length === 0) { this.setStatus(`No exact matches for "${term}".`, 'error'); el('comm-input').disabled = false; el('comm-input').focus(); } else if (matches.length === 1) { this.previewJob(matches[0]); } else { this.setStatus(`Found ${matches.length} matches. Select one:`, 'warning'); const ties = this.getEl('comm-tiebreaker-list'); ties.innerHTML = ''; matches.forEach(m => { const btn = document.createElement('button'); btn.className = 'fc-tie-btn'; btn.innerHTML = `<div style="font-size:14px; font-weight:bold; color:#3498db; margin-bottom:2px;">${m.pet}</div><div style="font-size:12px; color:#fff;">Family: ${m.family}</div><div class="fc-tie-clinic">Clinic: ${m.clinic} | ID: ${m.reqId} | Crem ID: ${m.cremId}</div>`; btn.onclick = () => { ties.style.display = 'none'; ties.innerHTML = ''; this.previewJob(m); }; ties.appendChild(btn); }); ties.style.display = 'block'; } } catch (err) { this.setStatus('Network error.', 'error'); el('comm-input').disabled = false; el('comm-input').focus(); } });
+
+                el('comm-input').addEventListener('keypress', async e => {
+                    if (e.key !== 'Enter') return;
+                    if (this.awaitingConfirm) { e.preventDefault(); await this.executeCheckIn(); return; }
+
+                    const term = el('comm-input').value.trim();
+                    if (!term) return;
+
+                    let numW = 0;
+                    if (State.settings.commWeightMode === 'numeric') {
+                        numW = parseFloat(el('comm-weight').value) || 0;
+                        if(numW === 0 && term.toLowerCase() !== 'test') {
+                            this.setStatus("Enter numeric weight first.", 'warning');
+                            el('comm-weight').focus();
+                            return;
+                        }
+                    }
+
+                    if (term.toLowerCase() === 'test') {
+                        el('comm-input').value = ''; el('comm-weight').value = '';
+                        let testArr = [{p:'Garfield',s:'Large',pal:1},{p:'Snoopy',s:'Medium',pal:1},{p:'Scooby',s:'Large',pal:1},{p:'Tom',s:'Small',pal:2},{p:'Pluto',s:'Medium',pal:2},{p:'Goofy',s:'Large',pal:2}];
+                        if (State.settings.commPalletCount > 2) testArr.push({p:'Porky',s:'Medium',pal:3});
+                        if (State.settings.commPalletCount > 3) testArr.push({p:'Bugs',s:'Small',pal:4});
+                        testArr.forEach((d,i) => {
+                            let w = d.s==='Small'?12 : d.s==='Medium'?40 : 85;
+                            State.commLog.push({ jobId:'test-'+Date.now()+'-'+i, batch:State.commLog.length+1, pallet:d.pal, size:d.s, weightNum:w, pet:d.p, family:'Fam', clinic:'Vet', keepsakes:'X', hasKeepsakes:false, initials:State.settings.initials });
+                        });
+                        State.saveComm(); this.renderLog(); this.setStatus('Secret: Fake records injected.', 'success'); AudioService.play('success');
+                        return;
+                    }
+
+                    el('comm-input').value = '';
+                    el('comm-input').disabled = true;
+                    el('comm-tiebreaker-list').style.display = 'none';
+                    el('comm-confirm-box').style.display = 'none';
+
+                    try {
+                        // Phase 1: Local Cache Intercept
+                        if (State.settings.enableLocalCache) {
+                            const cachedJob = State.rapidLog.find(j => j.jobId === term || j.reqId === term || j.cremId === term);
+                            if (cachedJob) {
+                                this.setStatus('Resolved via local cache (0ms).', 'success');
+                                this.previewJob(cachedJob);
+                                return;
+                            }
+                        }
+
+                        // Phase 2: Normal DB Scan (Closed Records)
+                        const normalDays = State.settings.commSearchDaysNormal || 7;
+                        this.setStatus(`Quick scan (${normalDays}d) for "${term}"...`, 'neutral');
+                        let matches = await API.searchJobs(term, 1, normalDays);
+
+                        // Phase 3: Active Orders (Open Records)
+                        if (matches.length === 0) {
+                            this.setStatus(`Checking active orders for "${term}"...`, 'neutral');
+                            matches = await API.searchJobs(term, 0);
+                        }
+
+                        // Phase 4: Progressive Deep Scan Cascade (Historical Closed Records)
+                        if (matches.length === 0) {
+                            const deepDays = State.settings.commSearchDaysDeep || 60;
+                            this.setStatus(`Deep scan (${deepDays}d) for "${term}"...`, 'warning');
+                            matches = await API.searchJobs(term, 1, deepDays);
+                        }
+
+                        // Match Evaluation
+                        if (matches.length === 0) {
+                            this.setStatus(`No exact matches for "${term}".`, 'error');
+                            el('comm-input').disabled = false;
+                            el('comm-input').focus();
+                        } else if (matches.length === 1) {
+                            this.previewJob(matches[0]);
+                        } else {
+                            this.setStatus(`Found ${matches.length} matches. Select one:`, 'warning');
+                            const ties = this.getEl('comm-tiebreaker-list');
+                            ties.innerHTML = '';
+                            matches.forEach(m => {
+                                const btn = document.createElement('button');
+                                btn.className = 'fc-tie-btn';
+                                btn.innerHTML = `<div style="font-size:14px; font-weight:bold; color:#3498db; margin-bottom:2px;">${m.pet}</div><div style="font-size:12px; color:#fff;">Family: ${m.family}</div><div class="fc-tie-clinic">Clinic: ${m.clinic} | ID: ${m.reqId} | Crem ID: ${m.cremId}</div>`;
+                                btn.onclick = () => { ties.style.display = 'none'; ties.innerHTML = ''; this.previewJob(m); };
+                                ties.appendChild(btn);
+                            });
+                            ties.style.display = 'block';
+                        }
+                    } catch (err) {
+                        this.setStatus('Network error.', 'error');
+                        el('comm-input').disabled = false;
+                        el('comm-input').focus();
+                    }
+                });
 
                 el('comm-clear-btn').addEventListener('click', () => { if (confirm('Clear entire communal log?')) { State.commLog = []; State.saveComm(); this.renderLog(); this.setStatus('Log cleared.', 'neutral'); } });
                 el('comm-copy-btn').addEventListener('click', () => this.exportLog(false)); el('comm-print-btn').addEventListener('click', () => this.exportLog(true));
@@ -938,7 +1223,7 @@
                     doc.querySelectorAll('.inline_details_section').forEach(el => { const h4 = el.querySelector('h4'); if(h4) { const hdr = h4.innerText.trim(); if(hdr==='Family:') tFam = el.querySelector('h5') ? el.querySelector('h5').innerText.trim() : tFam; if(hdr==='Clinic:') tClin = el.querySelector('h5') ? el.querySelector('h5').innerText.trim() : tClin; if(hdr==='Pet:') tPet = el.querySelector('.request-detail-pet-name') ? el.querySelector('.request-detail-pet-name').innerText.trim() : tPet; if(hdr==='Size:') tSize = el.querySelector('h6') ? el.querySelector('h6').innerText.trim() : tSize; } });
                     let kList = []; doc.querySelectorAll('.job-detail-items-section .custom-control-description').forEach(n => { let txt = n.innerText.trim().toLowerCase(), code = ''; if(txt.includes('clay paw')) code = 'CP'; else if(txt.includes('ink paw')) code = 'IP'; else if(txt.includes('ink nose')) code = 'IN'; else if(txt.includes('fur clip')||txt.includes('hair clip')) code = 'FC'; else if(txt.includes('photo')) code = 'PH'; else code = txt; let match = txt.match(/\(x(\d+)\)/); if(match && parseInt(match[1])>1 && code.length===2) code = match[1]+code; kList.push(code.toUpperCase()); });
                     const hasK = kList.length > 0; const kText = hasK ? kList.join(', ') : 'X';
-                    // Replace the pendingJob assignment with this:
+
                     this.pendingJob = { ...data, pet: Utils.formatPet(tPet), family: Utils.formatFamily(tFam), clinic: Utils.formatClinic(tClin), keepsakes: kText, hasKeepsakes: hasK, size: tSize };
                     const actW = (State.settings.commWeightMode === 'numeric') ? `${this.getEl('comm-weight').value} lbs` : tSize;
                     this.getEl('comm-confirm-box').innerHTML = `<div><span class="fc-confirm-label">Pallet:</span> <span class="fc-confirm-val" style="color:#3498db; font-weight:bold;">${State.activePallet}</span></div><div><span class="fc-confirm-label">Weight:</span> <span class="fc-confirm-val" style="color:#3498db; font-weight:bold;">${actW}</span></div><div><span class="fc-confirm-label">Type:</span> <span class="fc-confirm-val" style="color:#3498db; font-weight:bold;">${data.type}</span></div><div><span class="fc-confirm-label">Pet:</span> <span class="fc-confirm-val">${this.pendingJob.pet}</span></div><div><span class="fc-confirm-label">Family:</span> <span class="fc-confirm-val">${this.pendingJob.family}</span></div><div><span class="fc-confirm-label">Keepsakes:</span> <span class="fc-confirm-val" style="color:${hasK?'#4cd137':'#fff'}; font-weight:bold;">${kText}</span></div><div class="fc-confirm-warn">Press ENTER to confirm to Pallet ${State.activePallet}.</div>`;
