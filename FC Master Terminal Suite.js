@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FC Master Terminal Suite
 // @namespace    http://tampermonkey.net/
-// @version      13.22
+// @version      13.22.1
 // @description Enhances the Faithful Companion admin portal with optimized Check-In and Communal scanning terminals. Features include progressive Two-Tier database querying, local memory caching, intelligent string normalization with fuzzy acronym matching, automated pallet and weight tracking, and formatted HTML/TSV export generation.
 // @author       Caleb McDougall
 // @match        *://admin.faithfulcompanion.com/job*
@@ -36,15 +36,16 @@
             }
         },
 
-        // --- NEW: Centralized Export Styling ---
+        // --- Centralized Export Styling ---
         exportTheme: {
-            fontFamily: "'Lexend', sans-serif",
-            headerFontSize: "9pt",
+            fontFamily: "'Lexend Deca', sans-serif",
+            headerFontSize: "11pt",
             bodyFontSize: "10pt",
-            summaryPadding: "0pt 5.4pt",
-            logPadding: "4pt",
-            rowHeightHeader: "21.75pt",
-            rowHeightBody: "19.2pt",
+            // Padding "Vertical Horizontal"
+            summaryPadding: "1.5pt 2.5pt",
+            logPadding: "1.5pt 2.5pt",
+            rowHeightHeader: "12pt",
+            rowHeightBody: "12pt",
             borderThick: "1.5pt solid black",
             borderThin: "0.5pt solid black",
             bgHeader: "#bfbfbf",
@@ -1380,7 +1381,7 @@
                     let spacing = (!isFirstTable && isSeparate && !isPrint) ? '<br><br>' : '';
                     isFirstTable = false;
 
-                    let tableHtml = `${spacing}<div style="${pageBreakStyle}"><h3 style="font-family:-apple-system,sans-serif;">${heading}</h3><table cellspacing="0" border="0" cellpadding="0" style="border-collapse:collapse;border:${th.borderThick};font-family:${th.fontFamily};font-size:${th.bodyFontSize};width:100%;"><tr style="height:${th.rowHeightHeader};background-color:${th.bgHeader};"><td style="border:${th.borderThick};padding:${th.logPadding};text-align:center;width:8%;"><b>Batch</b></td><td style="border:${th.borderThick};padding:${th.logPadding};text-align:center;width:10%;"><b>Weight</b></td><td style="border:${th.borderThick};padding:${th.logPadding};width:20%;"><b>Pet Name</b></td><td style="border:${th.borderThick};padding:${th.logPadding};width:20%;"><b>Family Name</b></td><td style="border:${th.borderThick};padding:${th.logPadding};width:22%;"><b>Clinic</b></td><td style="border:${th.borderThick};padding:${th.logPadding};text-align:center;width:12%;"><b>Keepsakes</b></td><td style="border:${th.borderThick};padding:${th.logPadding};text-align:center;width:8%;"><b>Initials</b></td></tr>`;
+                    let tableHtml = `${spacing}<div style="${pageBreakStyle}"><h3 style="font-family:-apple-system,sans-serif;">${heading}</h3><table cellspacing="0" border="0" cellpadding="0" style="border-collapse:collapse;border:${th.borderThick};font-family:${th.fontFamily};font-size:${th.bodyFontSize};width:100%;"><tr style="height:${th.rowHeightHeader};background-color:${th.bgHeader};"><td style="border:${th.borderThick};padding:${th.logPadding};text-align:center;width:7%;"><b>Batch</b></td><td style="border:${th.borderThick};padding:${th.logPadding};text-align:center;width:10%;"><b>Weight</b></td><td style="border:${th.borderThick};padding:${th.logPadding};width:20%;"><b>Pet Name</b></td><td style="border:${th.borderThick};padding:${th.logPadding};width:20%;"><b>Family Name</b></td><td style="border:${th.borderThick};padding:${th.logPadding};width:22%;"><b>Clinic</b></td><td style="border:${th.borderThick};padding:${th.logPadding};text-align:center;width:12%;"><b>Keepsakes</b></td><td style="border:${th.borderThick};padding:${th.logPadding};text-align:center;width:8%;"><b>Initials</b></td></tr>`;
 
                     pLog.forEach((rowObj, index) => {
                         let rB = index+1, rW = '', rP = rowObj.pet||'', rF = rowObj.family||'', rC = rowObj.clinic||'', rK = rowObj.keepsakes||'', rI = rowObj.initials||'', pN = rowObj.pallet || palletNum;
@@ -1410,7 +1411,7 @@
                     pw.document.write(`<html><head><title>Communal Cremation Log</title><style>
                         @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap');
                         body{font-family:'Lexend',-apple-system,sans-serif;padding:20px;color:#000;box-sizing:border-box;}
-                        @media print{body{padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+                        @media print{body{padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}}s
                     </style></head><body>${ex.wordHtml}</body></html>`);
                     pw.document.close(); setTimeout(() => pw.focus(), 500);
                 } else {
