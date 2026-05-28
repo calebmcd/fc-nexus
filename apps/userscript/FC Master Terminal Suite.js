@@ -7,6 +7,8 @@
 // @match        *://admin.faithfulcompanion.com/job*
 // @run-at       document-idle
 // @grant        none
+// @updateURL    https://raw.githubusercontent.com/calebmcd/fc-nexus/main/apps/userscript/FC%20Master%20Terminal%20Suite.js
+// @downloadURL  https://raw.githubusercontent.com/calebmcd/fc-nexus/main/apps/userscript/FC%20Master%20Terminal%20Suite.js
 // ==/UserScript==
 
 (function () {
