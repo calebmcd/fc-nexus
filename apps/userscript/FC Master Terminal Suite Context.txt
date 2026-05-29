@@ -1,35 +1,246 @@
 # FC Master Terminal Suite - Developer Context
-**Current Version:** 10.6
-**Environment:** Tampermonkey script running on `admin.faithfulcompanion.com/job*`
-**Purpose:** A unified overlay bypassing the standard UI to offer Rapid Check-In, Communal Logging, and X-Ray Vision. 
 
-## 1. Architectural Rules (Strictly Enforced)
-The script uses a decoupled, modular namespace architecture. DO NOT write flat, monolithic code.
-* `CONFIG`: Stores local storage keys, endpoints, and default settings.
-* `State`: Single source of truth. Handles `rapidLog`, `commLog`, `settings`, `activePallet`. UI modules read/write here.
-* `Utils`: Pure helpers (HTML stripping, date formatting, clipboard generation).
-* `AudioService`: Web Audio API synthesizer.
-* `API`: All fetch requests. Never put `fetch()` calls inside UI logic.
-* `UI`: CSS injection and initial DOM HTML payload.
-* `App`: Main controller with submodules `App.Rapid`, `App.Comm`, and `App.XRay`.
+**Current Version:** 13.22.1  
+**Environment:** Tampermonkey userscript (`@grant none`) on `*://admin.faithfulcompanion.com/job*`  
+**Source:** `apps/userscript/FC Master Terminal Suite.js`  
+**Purpose:** A unified overlay on the Faithful Companion admin job portal that bypasses the standard UI for warehouse scanning workflows — Communal Check-In, Communal Cremation logging, and passive job inspection (X-Ray Vision).
 
-## 2. Faithful Companion API Quirks (CRITICAL)
-The `/job/list` endpoint uses a fragile DataTables backend. You must adhere to these rules:
-* **The 14-Column Rule:** The POST payload MUST explicitly define `columns[0]` through `columns[13]` (data, name, searchable, orderable, search[value], search[regex]). Omitting columns causes the server to shift/scramble the returned array indexes.
-* **Sequential Fetching:** The server has aggressive rate-limiting. DO NOT use `Promise.all()` to search Open and Closed jobs concurrently. You must `await` the first fetch before firing the second. 
-* **Date Filters:** The payload requires `job_filter_period` (e.g., `01/01/2026 - 03/01/2026`). Do NOT manually URL-encode this string (no `%2F` or `+-+`); `URLSearchParams` handles it natively. If you double-encode, the server returns 0 results.
-* **Data Mapping:** The clean data returned maps exactly as follows:
-   * `row[0]`: Request ID (strip HTML)
-   * `row[3]`: Cremation ID (strip HTML)
-   * `row[5]`: Service Type (e.g., Private, Communal)
-   * `row[6]`: Clinic (Must scrape `data-content="..."` regex to get the un-truncated name)
-   * `row[7]`: Family Name
-   * `row[8]`: Pet Name
+---
 
-## 3. Resolved Anti-Patterns & Bugs (Do Not Repeat)
-* **X-Ray Tooltip Null Error:** The `App.XRay.init()` function MUST dynamically create `<div id="fc-xray-tooltip"></div>` and append it to the `document.body` if it doesn't exist. Do not rely on the main UI injector for this, or it will throw null reference errors on mouseover.
-* **Scope Loss on DOM Events:** Ensure `activePallet` is stored in the global `State` object, not as a local variable inside the Comm module, to prevent `ReferenceError` on button clicks.
-* **Print Styling:** When exporting the HTML table for printing via `window.open()`, inline styles for alternating row colors (`background-color:#ededed` / `#ffffff`) must be calculated and injected directly into the `<tr>` tags during generation, otherwise the printed page will be transparent.
+## 1. High-Level Architecture
 
-## 4. Current Task
+The script is a single IIFE with `'use strict'`. All logic lives inside an isolated namespace — never attach to `window`. DO NOT write flat, monolithic code.
+
+### Boot Sequence (`App.init`)
+1. Guard against double-init (`#fc-master-wrapper`).
+2. `UserManager.identifyUser()` → reads `a.profileName` from DOM; falls back to `'Shared'`.
+3. `State.load()` → hydrate logs, settings, sync queue from per-user `localStorage`.
+4. `UI.injectStyles()` + `UI.injectDOM()`.
+5. Initialize submodules in order: `GlobalSettings`, global events, `SyncManager`, `Drag`, `NativePrint`, `Rapid`, `Comm`, `XRay`, `Shortcuts`.
+
+### Core Namespaces
+
+| Namespace | Responsibility |
+|-----------|----------------|
+| `CONFIG` | Storage key factory, API endpoints, clinic/acronym dictionaries, export theme, default settings |
+| `State` | Single source of truth — logs, settings, sync queue, active pallet, xray cache, view flags |
+| `Utils` | Pure helpers — HTML stripping, date ranges, DataTables payload builder, clipboard, string formatters |
+| `AudioService` | Web Audio API synthesizer (`found`, `success`, `alert`) |
+| `API` | All `fetch()` calls — job search, details HTML, check-in status update |
+| `UI` | CSS injection and initial DOM HTML payload |
+| `App` | Main controller with feature submodules (see below) |
+
+### App Submodules
+
+| Submodule | Role |
+|-----------|------|
+| `App.UserManager` | Reads logged-in user from native portal DOM for isolated storage |
+| `App.GlobalSettings` | Gear panel — initials, audio, opacity, position, dev mode, backup import/export, legacy migration |
+| `App.Shortcuts` | Remappable keyboard shortcuts with capture UI |
+| `App.SyncManager` | Offline check-in queue — polls every 30s + on `online` event |
+| `App.NativePrint` | Injects 🖨️ button into native DataTables rows on hover |
+| `App.Drag` | Draggable/resizable terminals; position/size persisted in settings |
+| `App.Rapid` | Communal Check-In terminal |
+| `App.Comm` | Communal Cremation terminal (multi-pallet, weight tracking) |
+| `App.XRay` | Hover tooltip with async job detail preview |
+
+---
+
+## 2. State & Persistence
+
+### Per-User localStorage Keys (`CONFIG.storage.getKeys(username)`)
+- `fc-rapid-log-{user}` → `State.rapidLog`
+- `fc-comm-log-{user}` → `State.commLog`
+- `fc-master-settings-{user}` → `State.settings`
+- `fc-sync-queue-{user}` → `State.syncQueue` (array of job IDs pending check-in)
+
+### State Fields
+- `currentUser`, `rapidLog[]`, `commLog[]`, `syncQueue[]`
+- `activePallet` (1–4) — **must live on State**, not as a local variable in Comm (prevents scope loss on button clicks)
+- `settings` — merged from `CONFIG.defaultSettings` + saved JSON
+- `xrayCache{}` — in-memory job detail cache keyed by jobId
+- `viewAllRapid`, `viewAllComm` — log expansion toggles
+
+### Default Settings Highlights (`CONFIG.defaultSettings`)
+- `initials`, `soundEnabled`, `audioVolume`, `terminalOpacity`, `defaultPosition`
+- Rapid: `rapidAutoPrint`
+- Comm: `commWeightMode` (`size`|`numeric`), S/M/L weight estimates, `commPalletCount` (1–4), `maxCombinedWeight`, `commSummaryFormat` (`split`|`combined`), `commExportFormat` (`combined`|`separate`), `commColorCode`
+- Search: `searchDays` (60), `commSearchDaysNormal` (7), `commSearchDaysDeep` (60), `enableLocalCache`
+- Features: `xrayEnabled`, `nativePrintEnabled`, `devMode`, `simulateOffline`
+- `positions` — `{ rapid, comm, global }` with top/left/width/height
+- `shortcuts` — `{ toggleRapid, toggleComm, focusSearch, closeTerminals }`
+
+### Save Methods
+- `State.saveSettings()` — also triggers `App.XRay.applyState()` and `App.NativePrint.applyState()`
+- `State.saveRapid()`, `State.saveComm()`, `State.saveSync()` — each persists + sync badge update
+
+---
+
+## 3. Feature Modules
+
+### 3A. Communal Check-In (`App.Rapid`)
+**Workflow:** Scan/search → API lookup → fetch job details → confirm preview → `API.checkInJob()` → append to log → optional auto-print.
+
+- Searches **open orders only** (`show_completed_orders: 0`).
+- Duplicate prevention by `jobId`.
+- Keepsake code mapping: CP (Clay Paw), IP (Ink Paw), IN (Ink Nose), FC (Fur Clip), PH (Photo); quantity prefix supported (e.g. `2FC`).
+- Manual FC Form entry (`manual-{timestamp}` jobIds) — no server check-in.
+- Log actions: edit, print (server jobs only), delete.
+- Export: Word-compatible HTML table + TSV via clipboard, or print via `window.open()`.
+- Secret easter egg: type `test` in search to inject fake records.
+
+### 3B. Communal Cremation (`App.Comm`)
+**Workflow:** Select pallet → scan/search → progressive lookup → fetch details → confirm → append to local log (no server status change).
+
+- **Does NOT call `checkInJob`** — logging is local-only.
+- **Progressive Two-Tier Query Cascade** (sequential, never `Promise.all`):
+  1. **Local cache** — match against `State.rapidLog` by jobId/reqId/cremId (if `enableLocalCache`)
+  2. **Quick scan** — closed records, `commSearchDaysNormal` (default 7d)
+  3. **Active orders** — open records (`show_completed_orders: 0`)
+  4. **Deep scan** — closed records, `commSearchDaysDeep` (default 60d)
+- Up to **4 concurrent pallets** with live S/M/L counts on pallet buttons.
+- **Weight modes:** `size` (estimates from S/M/L settings) or `numeric` (manual lbs input required before scan).
+- Capacity bar: combined weight vs `maxCombinedWeight` (green <60%, yellow <90%, red ≥90%).
+- Manual entries: FC Form or Stray/Wildlife preset.
+- Export: summary table (split or combined pallet totals) + detailed log; optional per-pallet color coding and separate print pages.
+
+### 3C. X-Ray Vision (`App.XRay`)
+- Hover 600ms on native job row link → fetches `/job/details/{id}` → floating tooltip.
+- Shows: pet, size, status/history, keepsakes, return-to, amount due, special requests, internal notes.
+- **Shift** pins tooltip (`pointer-events: auto`); release Shift to dismiss.
+- `State.xrayCache` prevents repeat fetches.
+- **CRITICAL:** `init()` MUST dynamically create `<div id="fc-xray-tooltip"></div>` on `document.body` if missing — do not rely on `UI.injectDOM()` alone.
+
+### 3D. Offline Sync Queue (`App.SyncManager`)
+- `API.checkInJob()` on network failure (or `simulateOffline`) queues jobId in `State.syncQueue`.
+- Background daemon: processes queue sequentially with 1s delay between items; stops on first failure.
+- Amber pulse badge on dock when queue non-empty.
+
+### 3E. Native UI Print (`App.NativePrint`)
+- When `nativePrintEnabled`, hovering native DataTables rows injects a print button.
+- Opens hidden iframe to `CONFIG.endpoints.print` + triggers browser print dialog.
+
+### 3F. Global Settings & Developer Mode
+- Gear icon opens floating settings panel.
+- **Developer Mode:** rapidly click "Global Settings" header 5× — unlocks search day limits, X-Ray toggle, native print toggle, offline simulation, comm scan windows, local cache toggle, and **Migrate Legacy Logs** (re-runs all log entries through current formatters/acronym matcher).
+- Backup export/import: JSON with settings, rapidLog, communalLog, syncQueue.
+
+### 3G. Keyboard Shortcuts (`App.Shortcuts`)
+- Defaults: `Alt+R` (Rapid), `Alt+C` (Comm), `Alt+F` (focus search), `Escape` (close all).
+- Remapping via click-to-listen UI; suppresses default browser behavior when triggered outside inputs.
+
+### 3H. Drag & Layout (`App.Drag`)
+- Terminals draggable by header; resizable via CSS `resize: both`.
+- Positions/sizes saved per terminal key (`rapid`, `comm`, `global`).
+- Reset button restores default corner position from `defaultPosition` setting.
+
+---
+
+## 4. String Formatting Engine (`Utils`)
+
+### Clinic Normalization
+1. `CONFIG.formatters.clinicMap` — full name → acronym (300+ entries).
+2. `CONFIG.formatters.clinics` — explicit truncation overrides for uppercase keys.
+3. `CONFIG.formatters.acronyms` — whitelist for Title Case preservation.
+4. `Utils.suggestClinicAcronym()` — fuzzy match stripping vet/hospital/clinic noise words.
+5. `Utils.formatClinic()`, `Utils.formatFamily()`, `Utils.formatPet()` — applied on preview, manual entry, and migration.
+
+### Adding New Clinics
+Add to `clinicMap` for acronym mapping; add resulting acronym to `acronyms` array; use `clinics` for manual truncation overrides.
+
+---
+
+## 5. Faithful Companion API Quirks (CRITICAL)
+
+### Endpoints (`CONFIG.endpoints`)
+- `POST /job/list` — DataTables job search
+- `GET /job/details/{id}` — full HTML detail page (parsed client-side)
+- `POST /job/updateStatus` — check-in (`job_id`, `status_id=5`, `is_batched=0`)
+- `GET /job/print-details/{id}` — print iframe target
+
+### The 14-Column Rule
+The `/job/list` POST payload MUST define `columns[0]` through `columns[13]` (data, name, searchable, orderable, search[value], search[regex]). Omitting columns scrambles returned array indexes. Built by `Utils.buildDataTablesPayload()`.
+
+### Sequential Fetching
+The server rate-limits aggressively. **Never use `Promise.all()`** for concurrent Open + Closed searches. Always `await` sequentially (Comm cascade enforces this across phases).
+
+### Date Filters
+Payload requires `job_filter_period` (e.g. `01/01/2026 - 03/01/2026`). Do NOT manually URL-encode (`%2F`, `+-+`). `URLSearchParams` handles encoding; double-encoding returns 0 results.
+
+### Data Mapping (cleaned by `API.searchJobs`)
+| Index | Field | Notes |
+|-------|-------|-------|
+| `row[0]` | Request ID | Strip HTML; extract jobId from `/job/details/(\d+)` |
+| `row[3]` | Cremation ID | Strip HTML |
+| `row[5]` | Service Type | e.g. Private, Communal |
+| `row[6]` | Clinic | Scrape `data-content="..."` for full untruncated name |
+| `row[7]` | Family Name | Strip HTML |
+| `row[8]` | Pet Name | Strip HTML |
+
+### Job Details HTML Parsing
+Both Rapid and Comm parse detail pages via `DOMParser`:
+- `.inline_details_section h4` labels: Pet, Family, Clinic, Size
+- `.job-detail-items-section .custom-control-description` → keepsakes
+- `.job_special_request`, `.job_internal_notes`, `.job_amount_due`
+- X-Ray additionally reads `.return-to-title`, `.pro_row` history
+
+---
+
+## 6. Export & Print Rules
+
+- All export styling centralized in `CONFIG.exportTheme` (Lexend Deca, alternating row colors, border weights).
+- **Print styling:** When exporting via `window.open()`, inline `background-color` on each `<tr>` MUST be calculated at generation time (`#ededed` / `#ffffff` or pallet color codes) — otherwise printed pages render transparent rows.
+- Rapid export: single table with batch/pet/family/clinic/keepsakes/initials.
+- Comm export: summary totals table + log table(s); supports split/combined summary and combined/separate pallet export.
+
+---
+
+## 7. Resolved Anti-Patterns & Bugs (Do Not Repeat)
+
+| Issue | Rule |
+|-------|------|
+| X-Ray null tooltip | Dynamically create `#fc-xray-tooltip` on `document.body` in `App.XRay.init()` |
+| Scope loss on pallet clicks | Store `activePallet` on `State`, never as Comm module local |
+| Print row colors missing | Inject inline `background-color` on `<tr>` during HTML generation |
+| Comm pallet shrink | Cannot reduce `commPalletCount` below highest pallet number in use |
+| Manual job print | Disable print action for `jobId.startsWith('manual-')` or `test-` |
+| Double-init | Guard `App.init()` with `#fc-master-wrapper` check |
+
+---
+
+## 8. UI Structure Reference
+
+```
+#fc-master-wrapper
+├── #fc-toggle-dock (fixed bottom-right)
+│   ├── #fc-sync-badge
+│   ├── #global-settings-btn
+│   ├── #rapid-toggle-btn
+│   └── #comm-toggle-btn
+├── #global-settings-panel
+├── #rapid-term (Communal Check-In)
+│   ├── #rapid-main-view | #rapid-settings-view | #rapid-manual-view | #rapid-edit-view
+└── #comm-term (Communal Cremation)
+    ├── #comm-main-view | #comm-settings-view | #comm-manual-view | #comm-edit-view
+    └── #comm-pallet-group (Pallet 1–4 toggles)
+#fc-xray-tooltip (appended to body, not inside wrapper)
+```
+
+Terminal panels use `.fc-term-panel` — fixed, draggable, resizable, themed red (Rapid) or blue (Comm).
+
+---
+
+## 9. Development Conventions
+
+- **No `fetch()` in UI modules** — route through `API`.
+- **Audio feedback** via `AudioService.play()` respecting `State.settings.soundEnabled`.
+- **Confirm flow pattern:** `awaitingConfirm` + `pendingJob` module locals; Enter confirms, Escape cancels.
+- **Tiebreaker UI:** multiple search matches render as `.fc-tie-btn` list.
+- **Log display:** last 5 entries by default; "View All History" expands.
+- **Version bumps:** update `@version` in userscript header; consider aligning backup export `version` field in `global-export-btn` handler.
+
+---
+
+## 10. Current Task
+
 [INSERT YOUR NEW FEATURE REQUEST OR BUG REPORT HERE]
