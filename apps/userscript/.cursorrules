@@ -1,0 +1,7 @@
+# FC Nexus Monorepo Rules
+
+- **Architecture:** This is a monorepo. Never assume the entire project is a single app. 
+- **Userscript (`/apps/userscript`):** Use Vanilla JavaScript. Rely on DOM manipulation. Do not import external npm libraries.
+- **Extension (`/apps/extension`):** Use strictly TypeScript and React. Prioritize functional components and hooks. Use Manifest V3 standards.
+- **Desktop (`/apps/desktop`):** Use Go for backend logic and React for the frontend UI via Wails.
+- **Formatting:** Use 2 spaces for indentation. Always use strict equality (`===`) in JavaScript/TypeScript.
